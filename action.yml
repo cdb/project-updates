@@ -1,0 +1,13 @@
+name: 'Project Updates'
+description: 'Action to send the latest changes on a GitHub project to a Slack channel'
+inputs:
+  who-to-greet:  # id of input
+    description: 'Who to greet'
+    required: true
+    default: 'World'
+outputs:
+  time: # id of output
+    description: 'The time we greeted you'
+runs:
+  using: 'node18'
+  main: 'dist/index.js'
