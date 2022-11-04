@@ -1,0 +1,19 @@
+name: Run Build
+on: push
+jobs:
+  date:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Run Build
+        run: cd src && npm run build
+      - name: Commit Changes
+        run: |
+          git config --global user.email "actions@github.com" &&
+          git config --global user.name "Actions Bot" &&
+          (git diff-index HEAD -- &&
+          git commit -a -m 'Add build changes' &&
+          git push) || true
