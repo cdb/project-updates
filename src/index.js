@@ -1,4 +1,5 @@
 import core from "@actions/core";
+import { summary } from "@actions/core";
 import github from "@actions/github";
 import GitHubProject from "github-project";
 
@@ -19,7 +20,7 @@ async function getOldItems() {
       repo: storageRepo,
       path: storagePath,
     });
-    core.debug("Got contents: ", contents.data);
+    debug("Old Item Contents: ", contents.data);
     items = JSON.parse(Buffer.from(contents.data.content, "base64"));
     sha = contents.data.sha;
   } catch (err) {
@@ -95,28 +96,55 @@ async function outputDiff(prev, next) {
   core.setOutput("removed", JSON.stringify(removed));
   core.setOutput("changed", JSON.stringify(changed));
 
-  await core.summary
-    .addHeading("New Issues")
-    .addList(added.map((item) => item.title))
-    .addHeading("Removed Issues")
-    .addList(removed.map((item) => item.title))
-    .addHeading("Changed Issues")
-    .addList(changed.map((item) => item.title))
-    .write();
+  if (added.length > 0) {
+    core.summary
+      .addHeading("New Issues")
+      .addList(added.map((item) => `<a href="${item.url}">${item.title}</a>`));
+  }
+
+  if (removed.length > 0) {
+    core.summary
+      .addHeading("Removed Issues")
+      .addList(
+        removed.map((item) => `<a href="${item.url}">${item.title}</a>`)
+      );
+  }
+
+  if (changed.length > 0) {
+    core.summary
+      .addHeading("Changed Issues")
+      .addList(
+        changed.map((item) => `<a href="${item.url}">${item.title}</a>`)
+      );
+  }
+
+  if (added.length + removed.length + changed.length === 0) {
+    core.summary
+      .addHeading("No Changes")
+      .addRaw("No changes were detected in the project.");
+  }
+
+  debug("stringify", core.summary.stringify());
+
+  core.summary.write;
 
   return { added, removed, changed };
 }
 
 try {
   let { items: oldItems, sha } = await getOldItems();
-  core.debug("oldItems", oldItems);
-  core.debug("sha", sha);
+  debug("oldItems", oldItems);
+  debug("sha", sha);
 
   let newItems = await getNewItems();
-  core.debug("newItems:", newItems);
+  debug("newItems:", newItems);
 
   await saveItems(newItems, sha);
   await outputDiff(oldItems, newItems);
 } catch (error) {
   core.setFailed(error.message);
+}
+
+function debug(name, obj) {
+  core.debug(`${name}: ${JSON.stringify(obj)}`);
 }

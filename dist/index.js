@@ -10574,6 +10574,7 @@ __nccwpck_require__.a(__webpack_module__, async (__webpack_handle_async_dependen
 
 
 
+
 const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("token"));
 const organization = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("organization");
 const projectNumber = parseInt(_actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("project_number"), 10);
@@ -10591,7 +10592,7 @@ async function getOldItems() {
       repo: storageRepo,
       path: storagePath,
     });
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("Got contents: ", contents.data);
+    debug("Old Item Contents: ", contents.data);
     items = JSON.parse(Buffer.from(contents.data.content, "base64"));
     sha = contents.data.sha;
   } catch (err) {
@@ -10667,29 +10668,53 @@ async function outputDiff(prev, next) {
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("removed", JSON.stringify(removed));
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("changed", JSON.stringify(changed));
 
-  await _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("New Issues")
-    .addList(added.map((item) => item.title))
-    .addHeading("Removed Issues")
-    .addList(removed.map((item) => item.title))
-    .addHeading("Changed Issues")
-    .addList(changed.map((item) => item.title))
-    .write();
+  if (added.length > 0) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("New Issues")
+      .addList(added.map((item) => `<a href="${item.url}">${item.title}</a>`));
+  }
+
+  if (removed.length > 0) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("Removed Issues")
+      .addList(
+        removed.map((item) => `<a href="${item.url}">${item.title}</a>`)
+      );
+  }
+
+  if (changed.length > 0) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("Changed Issues")
+      .addList(
+        changed.map((item) => `<a href="${item.url}">${item.title}</a>`)
+      );
+  }
+
+  if (added.length + removed.length + changed.length === 0) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("No Changes")
+      .addRaw("No changes were detected in the project.");
+  }
+
+  debug("stringify", _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.stringify());
+
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.write;
 
   return { added, removed, changed };
 }
 
 try {
   let { items: oldItems, sha } = await getOldItems();
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("oldItems", oldItems);
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("sha", sha);
+  debug("oldItems", oldItems);
+  debug("sha", sha);
 
   let newItems = await getNewItems();
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("newItems:", newItems);
+  debug("newItems:", newItems);
 
   await saveItems(newItems, sha);
   await outputDiff(oldItems, newItems);
 } catch (error) {
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);
+}
+
+function debug(name, obj) {
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${name}: ${JSON.stringify(obj)}`);
 }
 
 __webpack_handle_async_dependencies__();
