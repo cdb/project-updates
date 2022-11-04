@@ -1,4 +1,4 @@
-name: Example Dispatcher
+name: Test Action
 
 on:
   workflow_dispatch:
@@ -9,16 +9,19 @@ on:
         default: 'Monalisa'
 
 jobs:
-  hello_world_job:
+  update_project:
     runs-on: ubuntu-latest
-    name: A job to say hello
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Hello world action step
+      - name: Run Project Action
         uses: ./ # Uses an action in the root directory
         id: hello
         with:
-          who-to-greet: ${{ github.event.inputs.name }}
-      - name: Get the output time
-        run: echo "The time was ${{ steps.hello.outputs.time }}"
+          token: ${{ secrets.BBQ_ORG_TOKEN }}
+          organization: "bbq-beets"
+          project_number: 2
+          storage_repo: "cdb-test-webhooks"
+          storage_path: "data/projects.json"
+          committer_name: "Project Action Bot"
+          committer_email: "cdb@github.com"
