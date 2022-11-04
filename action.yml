@@ -1,13 +1,28 @@
 name: 'Project Updates'
 description: 'Action to send the latest changes on a GitHub project to a Slack channel'
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
+  token:
+    description: 'Token with access to read the project and write to the storage repository'
     required: true
-    default: 'World'
-outputs:
-  time: # id of output
-    description: 'The time we greeted you'
+    default: ${{ github.token }}
+  organization:
+    description: 'Organization that owns the project'
+    required: true
+  project_number:
+    description: 'Project number'
+    required: true
+  storage_repo:
+    description: 'Repository to store data in'
+    required: true
+  storage_path:
+    description: 'File in the repository to store data in, JSON format'
+    required: true
+  committer_name:
+    description: 'Name to commit data changes as'
+    required: true
+  committer_email:
+    description: 'Email for commiter'
+    required: true
 runs:
   using: 'node16'
   main: 'dist/index.js'
