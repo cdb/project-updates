@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Run Project Action
         uses: ./ # Uses an action in the root directory
-        id: hello
+        id: project-action
         with:
           token: ${{ secrets.BBQ_ORG_TOKEN }}
           organization: "bbq-beets"

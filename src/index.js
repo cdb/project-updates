@@ -90,9 +90,18 @@ async function outputDiff(prev, next) {
       added.push(next[id]);
     }
   }
-  console.log("added", added);
-  console.log("removed", removed);
-  console.log("changed", changed);
+
+  core.setOutput("added", JSON.stringify(added));
+  core.setOutput("removed", JSON.stringify(removed));
+  core.setOutput("changed", JSON.stringify(changed));
+
+  await core.summary
+    .addHeading("New Issues")
+    .addList(added.map((item) => item.title))
+    .addHeading("Removed Issues")
+    .addList(removed.map((item) => item.title))
+    .addHeading("Changed Issues")
+    .addList(changed.map((item) => item.title));
 
   return { added, removed, changed };
 }

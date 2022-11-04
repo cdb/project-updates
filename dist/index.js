@@ -10662,9 +10662,17 @@ async function outputDiff(prev, next) {
       added.push(next[id]);
     }
   }
-  console.log("added", added);
-  console.log("removed", removed);
-  console.log("changed", changed);
+
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("added", JSON.stringify(added));
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("removed", JSON.stringify(removed));
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("changed", JSON.stringify(changed));
+
+  await _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.addHeading("New Issues")
+    .addList(added.map((item) => item.title))
+    .addHeading("Removed Issues")
+    .addList(removed.map((item) => item.title))
+    .addHeading("Changed Issues")
+    .addList(changed.map((item) => item.title));
 
   return { added, removed, changed };
 }
