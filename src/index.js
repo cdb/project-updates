@@ -75,7 +75,7 @@ async function saveItems(items, sha) {
   }
 }
 
-async function outputDiff(prev, next) {
+async function calculateDiff(prev, next) {
   let added = [];
   let removed = [];
   let changed = [];
@@ -92,10 +92,16 @@ async function outputDiff(prev, next) {
     }
   }
 
+  return { added, removed, changed };
+}
+
+async function outputDiffAsOutput({ added, removed, changed }) {
   core.setOutput("added", JSON.stringify(added));
   core.setOutput("removed", JSON.stringify(removed));
   core.setOutput("changed", JSON.stringify(changed));
+}
 
+async function outputDiffToSummary({ added, removed, changed }) {
   if (added.length > 0) {
     core.summary
       .addHeading("New Issues")
@@ -121,14 +127,15 @@ async function outputDiff(prev, next) {
   if (added.length + removed.length + changed.length === 0) {
     core.summary
       .addHeading("No Changes")
-      .addRaw("No changes were detected in the project.");
+      .addRaw("\nNo changes were detected in the project.");
   }
 
-  debug("stringify", core.summary.stringify());
-
-  core.summary.write();
-
-  return { added, removed, changed };
+  const pathFromEnv = process.env["GITHUB_STEP_SUMMARY"];
+  if (pathFromEnv) {
+    core.summary.write();
+  } else {
+    debug("would write summary", core.summary.stringify());
+  }
 }
 
 try {
@@ -140,7 +147,10 @@ try {
   debug("newItems:", newItems);
 
   await saveItems(newItems, sha);
-  await outputDiff(oldItems, newItems);
+  let diff = await calculateDiff(oldItems, newItems);
+
+  await outputDiffAsOutput(diff);
+  await outputDiffToSummary(diff);
 } catch (error) {
   core.setFailed(error.message);
 }
