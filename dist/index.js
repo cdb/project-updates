@@ -10694,7 +10694,7 @@ async function outputDiff(prev, next) {
 
   debug("stringify", _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.stringify());
 
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.write;
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.summary.write();
 
   return { added, removed, changed };
 }

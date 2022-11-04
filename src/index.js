@@ -126,7 +126,7 @@ async function outputDiff(prev, next) {
 
   debug("stringify", core.summary.stringify());
 
-  core.summary.write;
+  core.summary.write();
 
   return { added, removed, changed };
 }
