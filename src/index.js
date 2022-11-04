@@ -19,11 +19,11 @@ async function getOldItems() {
       repo: storageRepo,
       path: storagePath,
     });
-
-    items = JSON.parse(atob(contents.data.content));
+    core.debug("Got contents: ", contents.data);
+    items = JSON.parse(Buffer.from(contents.data.content, "base64"));
     sha = contents.data.sha;
   } catch (err) {
-    console.error(err);
+    core.error(err);
   }
   return { items, sha };
 }
@@ -70,7 +70,7 @@ async function saveItems(items, sha) {
       },
     });
   } catch (err) {
-    console.error(err);
+    core.error(err);
   }
 }
 
@@ -108,11 +108,11 @@ async function outputDiff(prev, next) {
 
 try {
   let { items: oldItems, sha } = await getOldItems();
-  console.log("oldItems", oldItems);
-  console.log("sha", sha);
+  core.debug("oldItems", oldItems);
+  core.debug("sha", sha);
 
   let newItems = await getNewItems();
-  console.log("newItems:", newItems);
+  core.debug("newItems:", newItems);
 
   await saveItems(newItems, sha);
   await outputDiff(oldItems, newItems);

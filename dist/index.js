@@ -10591,11 +10591,11 @@ async function getOldItems() {
       repo: storageRepo,
       path: storagePath,
     });
-
-    items = JSON.parse(atob(contents.data.content));
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("Got contents: ", contents.data);
+    items = JSON.parse(Buffer.from(contents.data.content, "base64"));
     sha = contents.data.sha;
   } catch (err) {
-    console.error(err);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(err);
   }
   return { items, sha };
 }
@@ -10642,7 +10642,7 @@ async function saveItems(items, sha) {
       },
     });
   } catch (err) {
-    console.error(err);
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(err);
   }
 }
 
@@ -10679,11 +10679,11 @@ async function outputDiff(prev, next) {
 
 try {
   let { items: oldItems, sha } = await getOldItems();
-  console.log("oldItems", oldItems);
-  console.log("sha", sha);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("oldItems", oldItems);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("sha", sha);
 
   let newItems = await getNewItems();
-  console.log("newItems:", newItems);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug("newItems:", newItems);
 
   await saveItems(newItems, sha);
   await outputDiff(oldItems, newItems);
