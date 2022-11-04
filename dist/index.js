@@ -10672,7 +10672,8 @@ async function outputDiff(prev, next) {
     .addHeading("Removed Issues")
     .addList(removed.map((item) => item.title))
     .addHeading("Changed Issues")
-    .addList(changed.map((item) => item.title));
+    .addList(changed.map((item) => item.title))
+    .write();
 
   return { added, removed, changed };
 }
