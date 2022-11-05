@@ -15,12 +15,12 @@
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1",
     "@octokit/rest": "^19.0.5",
-    "@octokit/types": "^8.0.0",
-    "@types/lodash": "^4.14.188",
     "github-project": "^3.0.1",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@octokit/types": "^8.0.0",
+    "@types/lodash": "^4.14.188",
     "@types/node": "^18.11.9",
     "typescript": "^4.8.4"
   }
