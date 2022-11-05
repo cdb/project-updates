@@ -1,11 +1,11 @@
-import core from "@actions/core";
-import github from "@actions/github";
+import * as core from '@actions/core';
 import GitHubProject from "github-project";
-import lodash from "lodash";
+import { difference } from "lodash";
 
-const { difference } = lodash;
-
-const octokit = github.getOctokit(core.getInput("token"));
+import { Octokit } from '@octokit/rest';
+const octokit = new Octokit({
+	auth: core.getInput("token"),
+});
 const organization = core.getInput("organization");
 const projectNumber = parseInt(core.getInput("project_number"), 10);
 const storageRepo = core.getInput("storage_repo");
@@ -17,13 +17,15 @@ async function getOldItems() {
   let items = {};
   let sha = undefined;
   try {
-    let contents = await octokit.rest.repos.getContent({
+    let { data }: { data:any } = await octokit.rest.repos.getContent({
       owner: organization,
       repo: storageRepo,
       path: storagePath,
     });
-    items = JSON.parse(Buffer.from(contents.data.content, "base64"));
-    sha = contents.data.sha;
+    if (data.content != "undefined") {
+      items = JSON.parse(Buffer.from(data.content, "base64").toString());
+    }
+    sha = data.sha;
   } catch (err) {
     core.error(err);
   }
@@ -40,20 +42,24 @@ async function getNewItems() {
     },
   });
 
-  const items = await project.items.list();
-  let data = {};
+  const items: any[] = await project.items.list();
+  let data: any = {};
   for (const item of items) {
     // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
-    data[item.content.url] = {
-      type: item.type,
-      title: item.fields.title,
-      status: item.fields.status,
-      labels: item.content.labels,
-      url: item.content.url,
-      closed: item.content.closed,
-      merged: item.content.merged,
-      assignees: item.content.assignees,
-    };
+    if (item.content?.id === undefined) {
+      continue;
+    } else {
+      data[item.content.id] = {
+        type: item.type,
+        title: item.fields.title,
+        status: item.fields.status,
+        labels: item.content.labels,
+        url: item.content.url,
+        closed: item.content.closed,
+        merged: item.content.merged,
+        assignees: item.content.assignees,
+      };
+    }
   }
   return data;
 }
@@ -78,7 +84,7 @@ async function saveItems(items, sha) {
 }
 
 function buildChanges(prev, next) {
-  let changes = { title: next.title, url: next.url };
+  let changes: any = { title: next.title, url: next.url };
   if (prev.title !== next.title) {
     changes.previous_title = prev.title;
   }
