@@ -5,7 +5,7 @@ import { link } from 'fs';
 const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
 
-const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gi;
+const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gim;
 
 function cleanMessage(msg: string): string {
   const out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
