@@ -25,3 +25,7 @@ jobs:
           storage_path: "data/projects.json"
           committer_name: "Project Action Bot"
           committer_email: "cdb@github.com"
+      - run: |
+          echo "Output Added: ${{ steps.project-action.outputs.added }}"
+          echo "Output Removed: ${{ steps.project-action.outputs.removed }}"
+          echo "Output Changed: ${{ steps.project-action.outputs.changed }}"
