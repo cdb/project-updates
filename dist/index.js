@@ -37732,22 +37732,26 @@ function buildChangeSummary(item) {
 }
 async function outputDiffToSummary({ added, removed, changed }) {
     if (added.length > 0) {
-        core.summary.addHeading('New Issues')
-            .addList(added.map((item) => `<a href="${item.url}">${item.title}</a>`));
+        core.summary.addRaw('\n## New Issues\n\n');
+        added.forEach((item) => {
+            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
+        });
     }
     if (removed.length > 0) {
-        core.summary.addHeading('Removed Issues')
-            .addList(removed.map((item) => `<a href="${item.url}">${item.title}</a>`));
+        core.summary.addRaw('\n## Removed Issues\n\n');
+        removed.forEach((item) => {
+            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
+        });
     }
     if (changed.length > 0) {
-        core.summary.addHeading('Changed Issues')
-            .addList(changed.map((item) => `<a href="${item.url}">${item.title}</a> - ${buildChangeSummary(item)}`));
+        core.summary.addRaw('\n## Changed Issues\n\n');
+        changed.forEach((item) => {
+            core.summary.addRaw(`- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`);
+        });
     }
     if (added.length + removed.length + changed.length === 0) {
-        core.summary.addHeading('No Changes')
-            .addRaw('\nNo changes were detected in the project.');
+        core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
     }
-    core.summary.addRaw('\n\n### Heading?\n\n- bullet\n- bullet\n\n**bold**\n\n`code`\n\n[link](https://github.com)');
     const pathFromEnv = process.env['GITHUB_STEP_SUMMARY'];
     if (pathFromEnv) {
         core.summary.write();
