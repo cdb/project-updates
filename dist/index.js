@@ -37610,15 +37610,25 @@ var dist = __nccwpck_require__(4335);
 
 const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
+const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/i;
+function cleanMessage(msg) {
+    const out = msg.replace(linkFinderRegex, '<$2|$1>');
+    console.log('out', out);
+    return out;
+}
 async function sendMessage(msg) {
     if (slackToken === '') {
         core.warning('No slack token provided, skipping slack notification');
         return;
     }
+    if (msg === '') {
+        core.debug('No message provided, skipping slack notification');
+        return;
+    }
     try {
         const slackWebClient = new dist.WebClient(slackToken);
         const result = await slackWebClient.chat.postMessage({
-            text: msg,
+            text: cleanMessage(msg),
             channel: channel
         });
         if (result.ok) {
@@ -37749,6 +37759,7 @@ async function outputDiffToSummary({ added, removed, changed }) {
             core.summary.addRaw(`- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`);
         });
     }
+    const summaryWithoutNull = core.summary.stringify();
     if (added.length + removed.length + changed.length === 0) {
         core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
     }
@@ -37759,7 +37770,7 @@ async function outputDiffToSummary({ added, removed, changed }) {
     else {
         debug('would write summary', core.summary.stringify());
     }
-    return core.summary.stringify();
+    return summaryWithoutNull;
 }
 async function run() {
     try {
