@@ -6,9 +6,11 @@ const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
 
 const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gim;
+const headingFinderRegex = /^## (.*)$/gim;
 
 function cleanMessage(msg: string): string {
-  const out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
+  let out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
+  out = out.replaceAll(headingFinderRegex, '*$1*');
   console.log('out', out);
   return out;
 }
