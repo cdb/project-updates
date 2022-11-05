@@ -37609,7 +37609,7 @@ var dist = __nccwpck_require__(4335);
 
 const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
-const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gi;
+const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gim;
 function cleanMessage(msg) {
     const out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
     console.log('out', out);
