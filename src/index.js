@@ -43,6 +43,7 @@ async function getNewItems() {
   const items = await project.items.list();
   let data = {};
   for (const item of items) {
+    // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
     data[item.content.url] = {
       type: item.type,
       title: item.fields.title,
@@ -63,7 +64,7 @@ async function saveItems(items, sha) {
       owner: organization,
       repo: storageRepo,
       path: storagePath,
-      message: "update",
+      message: "update", // TODO: Better message would be useful
       content: Buffer.from(JSON.stringify(items, null, 2)).toString("base64"),
       sha,
       committer: {
@@ -109,9 +110,6 @@ function buildChanges(prev, next) {
   if (prev.closed !== next.closed) {
     changes.closed = { prev: prev.closed, next: next.closed };
   }
-  if (prev.closedAt !== next.closedAt) {
-    changes.closedAt = { prev: prev.closedAt, next: next.closedAt };
-  }
   if (prev.merged !== next.merged) {
     changes.merged = { prev: prev.merged, next: next.merged };
   }
@@ -121,7 +119,7 @@ function buildChanges(prev, next) {
 }
 
 function calculateDiff(prev, next) {
-  let added = [];
+  let added = []; // TODO: Handle type:DRAFT_ISSUE->type:ISSUE as a change not add/drop
   let removed = [];
   let changed = [];
   for (const id in prev) {
@@ -147,6 +145,7 @@ function outputDiffAsOutput({ added, removed, changed }) {
 }
 
 function buildChangeSummary(item) {
+  // TODO: Probably better ways to describe each change type
   let summaries = [];
   if (item.previous_title) {
     summaries.push(`Previous title: ${item.title.prev}`);
@@ -168,6 +167,9 @@ function buildChangeSummary(item) {
   }
   if (item.closed) {
     summaries.push(`Closed: ${item.closed.prev} -> ${item.closed.next}`);
+  }
+  if (item.merged) {
+    summaries.push(`Merged: ${item.merged.prev} -> ${item.merged.next}`);
   }
   debug("summaries", summaries);
   return summaries.join(", ");
