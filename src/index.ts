@@ -2,6 +2,7 @@ import { summary, setFailed } from '@actions/core';
 import api from './api';
 import outputs from './outputs';
 import { debug } from './helpers';
+import slack from './slack';
 import comparator from './comparator';
 
 function buildChangeSummary(item) {
@@ -65,9 +66,13 @@ async function outputDiffToSummary({ added, removed, changed }) {
 
   if (added.length + removed.length + changed.length === 0) {
     summary
-      .addHeading('No Changess')
+      .addHeading('No Changes')
       .addRaw('\nNo changes were detected in the project.');
   }
+
+  summary.addRaw(
+    '\n\n### Heading?\n\n- bullet\n- bullet\n\n**bold**\n\n`code`\n\n[link](https://github.com)'
+  );
 
   const pathFromEnv = process.env['GITHUB_STEP_SUMMARY'];
   if (pathFromEnv) {
@@ -75,20 +80,26 @@ async function outputDiffToSummary({ added, removed, changed }) {
   } else {
     debug('would write summary', summary.stringify());
   }
+  return summary.stringify();
 }
 
-try {
-  let { items: oldItems, sha } = await api.getOldItems();
-  debug('oldItems', oldItems);
+async function run(): Promise<void> {
+  try {
+    let { items: oldItems, sha } = await api.getOldItems();
+    debug('oldItems', oldItems);
 
-  let newItems = await api.getNewItems();
-  debug('newItems:', newItems);
+    let newItems = await api.getNewItems();
+    debug('newItems:', newItems);
 
-  await api.saveItems(newItems, sha);
-  let diff = comparator.diff(oldItems, newItems);
+    await api.saveItems(newItems, sha);
+    let diff = comparator.diff(oldItems, newItems);
 
-  outputs.diff(diff);
-  await outputDiffToSummary(diff);
-} catch (error) {
-  setFailed(error.message);
+    outputs.diff(diff);
+    const msg = await outputDiffToSummary(diff);
+    slack.sendMessage(msg);
+  } catch (error) {
+    setFailed(error.message);
+  }
 }
+
+run();
