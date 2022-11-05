@@ -60,6 +60,8 @@ async function outputDiffToSummary({ added, removed, changed }) {
     });
   }
 
+  const summaryWithoutNull = summary.stringify();
+
   if (added.length + removed.length + changed.length === 0) {
     summary.addRaw(
       '\n## No Changes\n\nNo changes were detected in the project.'
@@ -72,7 +74,7 @@ async function outputDiffToSummary({ added, removed, changed }) {
   } else {
     debug('would write summary', summary.stringify());
   }
-  return summary.stringify();
+  return summaryWithoutNull;
 }
 
 async function run(): Promise<void> {
