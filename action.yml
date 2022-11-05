@@ -23,6 +23,10 @@ inputs:
   committer_email:
     description: 'Email for committer'
     required: true
+  slack_token:
+    description: 'Slack token'
+  slack_channel:
+    description: 'Slack channel to send messages to'
 outputs:
   added:
     description: 'Cards added since last run'
