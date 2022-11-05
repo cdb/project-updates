@@ -1,7 +1,9 @@
 import core from "@actions/core";
-import { summary } from "@actions/core";
 import github from "@actions/github";
 import GitHubProject from "github-project";
+import lodash from "lodash";
+
+const { difference } = lodash;
 
 const octokit = github.getOctokit(core.getInput("token"));
 const organization = core.getInput("organization");
@@ -20,7 +22,6 @@ async function getOldItems() {
       repo: storageRepo,
       path: storagePath,
     });
-    debug("Old Item Contents: ", contents.data);
     items = JSON.parse(Buffer.from(contents.data.content, "base64"));
     sha = contents.data.sha;
   } catch (err) {
@@ -43,12 +44,12 @@ async function getNewItems() {
   let data = {};
   for (const item of items) {
     data[item.content.url] = {
+      type: item.type,
       title: item.fields.title,
       status: item.fields.status,
       labels: item.content.labels,
       url: item.content.url,
       closed: item.content.closed,
-      closedAt: item.content.closedAt,
       merged: item.content.merged,
       assignees: item.content.assignees,
     };
@@ -75,7 +76,51 @@ async function saveItems(items, sha) {
   }
 }
 
-async function calculateDiff(prev, next) {
+function buildChanges(prev, next) {
+  let changes = { title: next.title, url: next.url };
+  if (prev.title !== next.title) {
+    changes.previous_title = prev.title;
+  }
+
+  if (prev.status !== next.status) {
+    changes.status = { prev: prev.status, next: next.status };
+  }
+
+  let added_labels = difference(next.labels, prev.labels);
+  if (added_labels.length > 0) {
+    changes.labels_added = added_labels;
+  }
+
+  let remove_labels = difference(prev.labels, next.labels);
+  if (remove_labels.length > 0) {
+    changes.labels_removed = remove_labels;
+  }
+
+  let added_assignees = difference(next.assignees, prev.assignees);
+  if (added_assignees.length > 0) {
+    changes.assignees_added = added_assignees;
+  }
+
+  let removed_assignees = difference(prev.assignees, next.assignees);
+  if (removed_assignees.length > 0) {
+    changes.assignees_removed = removed_assignees;
+  }
+
+  if (prev.closed !== next.closed) {
+    changes.closed = { prev: prev.closed, next: next.closed };
+  }
+  if (prev.closedAt !== next.closedAt) {
+    changes.closedAt = { prev: prev.closedAt, next: next.closedAt };
+  }
+  if (prev.merged !== next.merged) {
+    changes.merged = { prev: prev.merged, next: next.merged };
+  }
+
+  debug("changes", changes);
+  return changes;
+}
+
+function calculateDiff(prev, next) {
   let added = [];
   let removed = [];
   let changed = [];
@@ -83,7 +128,7 @@ async function calculateDiff(prev, next) {
     if (!(id in next)) {
       removed.push(prev[id]);
     } else if (JSON.stringify(prev[id]) !== JSON.stringify(next[id])) {
-      changed.push(next[id]);
+      changed.push(buildChanges(prev[id], next[id]));
     }
   }
   for (const id in next) {
@@ -95,10 +140,37 @@ async function calculateDiff(prev, next) {
   return { added, removed, changed };
 }
 
-async function outputDiffAsOutput({ added, removed, changed }) {
+function outputDiffAsOutput({ added, removed, changed }) {
   core.setOutput("added", JSON.stringify(added));
   core.setOutput("removed", JSON.stringify(removed));
   core.setOutput("changed", JSON.stringify(changed));
+}
+
+function buildChangeSummary(item) {
+  let summaries = [];
+  if (item.previous_title) {
+    summaries.push(`Previous title: ${item.title.prev}`);
+  }
+  if (item.status) {
+    summaries.push(`Status: ${item.status.prev} -> ${item.status.next}`);
+  }
+  if (item.labels_added) {
+    summaries.push(`Added labels: ${item.labels_added.join(", ")}`);
+  }
+  if (item.labels_removed) {
+    summaries.push(`Removed labels: ${item.labels_removed.join(", ")}`);
+  }
+  if (item.assignees_added) {
+    summaries.push(`Assigned to: ${item.assignees_added.join(", ")}`);
+  }
+  if (item.assignees_removed) {
+    summaries.push(`Removed assignees: ${item.assignees_removed.join(", ")}`);
+  }
+  if (item.closed) {
+    summaries.push(`Closed: ${item.closed.prev} -> ${item.closed.next}`);
+  }
+  debug("summaries", summaries);
+  return summaries.join(", ");
 }
 
 async function outputDiffToSummary({ added, removed, changed }) {
@@ -120,13 +192,18 @@ async function outputDiffToSummary({ added, removed, changed }) {
     core.summary
       .addHeading("Changed Issues")
       .addList(
-        changed.map((item) => `<a href="${item.url}">${item.title}</a>`)
+        changed.map(
+          (item) =>
+            `<a href="${item.url}">${item.title}</a> - ${buildChangeSummary(
+              item
+            )}`
+        )
       );
   }
 
   if (added.length + removed.length + changed.length === 0) {
     core.summary
-      .addHeading("No Changes")
+      .addHeading("No Changess")
       .addRaw("\nNo changes were detected in the project.");
   }
 
@@ -141,15 +218,14 @@ async function outputDiffToSummary({ added, removed, changed }) {
 try {
   let { items: oldItems, sha } = await getOldItems();
   debug("oldItems", oldItems);
-  debug("sha", sha);
 
   let newItems = await getNewItems();
   debug("newItems:", newItems);
 
   await saveItems(newItems, sha);
-  let diff = await calculateDiff(oldItems, newItems);
+  let diff = calculateDiff(oldItems, newItems);
 
-  await outputDiffAsOutput(diff);
+  outputDiffAsOutput(diff);
   await outputDiffToSummary(diff);
 } catch (error) {
   core.setFailed(error.message);
