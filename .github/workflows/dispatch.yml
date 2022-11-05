@@ -2,14 +2,9 @@ name: Test Action
 
 on:
   workflow_dispatch:
-    inputs:
-      name:
-        description: 'Name'
-        required: true
-        default: 'Monalisa'
 
 jobs:
-  update_project:
+  run_action:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,6 +20,8 @@ jobs:
           storage_path: "data/projects.json"
           committer_name: "Project Action Bot"
           committer_email: "cdb@github.com"
+          slack_token: ${{ secrets.CDB_SLACK_TOKEN }}
+          slack_channel: ${{ secrets.CDB_SLACK_CHANNEL }}
       - run: |
           echo "Output Added: ${{ steps.project-action.outputs.added }}"
           echo "Output Removed: ${{ steps.project-action.outputs.removed }}"
