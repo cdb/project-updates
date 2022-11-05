@@ -37536,7 +37536,6 @@ async function getOldItems() {
     return { items, sha };
 }
 async function getNewItems() {
-    var _a;
     const project = new GitHubProject({
         owner: organization,
         number: projectNumber,
@@ -37549,7 +37548,7 @@ async function getNewItems() {
     let data = {};
     for (const item of items) {
         // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
-        if (((_a = item.content) === null || _a === void 0 ? void 0 : _a.id) === undefined) {
+        if (item.content?.id === undefined) {
             continue;
         }
         else {
@@ -37610,9 +37609,9 @@ var dist = __nccwpck_require__(4335);
 
 const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
-const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/i;
+const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gi;
 function cleanMessage(msg) {
-    const out = msg.replace(linkFinderRegex, '<$2|$1>');
+    const out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
     console.log('out', out);
     return out;
 }
@@ -37720,16 +37719,22 @@ function buildChangeSummary(item) {
         summaries.push(`Status: ${item.status.prev} -> ${item.status.next}`);
     }
     if (item.labels_added) {
-        summaries.push(`Added labels: ${item.labels_added.join(', ')}`);
+        summaries.push(`Added labels: ${item.labels_added.map((l) => '`' + l + '`').join(', ')}`);
     }
     if (item.labels_removed) {
-        summaries.push(`Removed labels: ${item.labels_removed.join(', ')}`);
+        summaries.push(`Removed labels: ${item.labels_removed
+            .map((l) => '`' + l + '`')
+            .join(', ')}`);
     }
     if (item.assignees_added) {
-        summaries.push(`Assigned to: ${item.assignees_added.join(', ')}`);
+        summaries.push(`Assigned to: ${item.assignees_added
+            .map((l) => '`' + l + '`')
+            .join(', ')}`);
     }
     if (item.assignees_removed) {
-        summaries.push(`Removed assignees: ${item.assignees_removed.join(', ')}`);
+        summaries.push(`Removed assignees: ${item.assignees_removed
+            .map((l) => '`' + l + '`')
+            .join(', ')}`);
     }
     if (item.closed) {
         summaries.push(`Closed: ${item.closed.prev} -> ${item.closed.next}`);
