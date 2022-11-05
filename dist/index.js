@@ -27481,9 +27481,9 @@ function buildChanges(prev, next) {
     if (added_labels.length > 0) {
         changes.labels_added = added_labels;
     }
-    let remove_labels = (0,lodash__WEBPACK_IMPORTED_MODULE_2__.difference)(prev.labels, next.labels);
-    if (remove_labels.length > 0) {
-        changes.labels_removed = remove_labels;
+    let removed_labels = (0,lodash__WEBPACK_IMPORTED_MODULE_2__.difference)(prev.labels, next.labels);
+    if (removed_labels.length > 0) {
+        changes.labels_removed = removed_labels;
     }
     let added_assignees = (0,lodash__WEBPACK_IMPORTED_MODULE_2__.difference)(next.assignees, prev.assignees);
     if (added_assignees.length > 0) {
