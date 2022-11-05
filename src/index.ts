@@ -12,31 +12,29 @@ function buildChangeSummary(item) {
     summaries.push(`Previous title: ${item.title.prev}`);
   }
   if (item.status) {
-    summaries.push(`Status: ${item.status.prev} -> ${item.status.next}`);
+    summaries.push(
+      `Status: \`${item.status.prev}\` -> \`${item.status.next}\``
+    );
   }
   if (item.labels_added) {
     summaries.push(
-      `Added labels: ${item.labels_added.map((l) => '`' + l + '`').join(', ')}`
+      `Added labels: ${item.labels_added.map((l) => `\`${l}\``).join(', ')}`
     );
   }
   if (item.labels_removed) {
     summaries.push(
-      `Removed labels: ${item.labels_removed
-        .map((l) => '`' + l + '`')
-        .join(', ')}`
+      `Removed labels: ${item.labels_removed.map((l) => `\`${l}\``).join(', ')}`
     );
   }
   if (item.assignees_added) {
     summaries.push(
-      `Assigned to: ${item.assignees_added
-        .map((l) => '`' + l + '`')
-        .join(', ')}`
+      `Assigned to: ${item.assignees_added.map((l) => `\`${l}\``).join(', ')}`
     );
   }
   if (item.assignees_removed) {
     summaries.push(
       `Removed assignees: ${item.assignees_removed
-        .map((l) => '`' + l + '`')
+        .map((l) => `\`${l}\``)
         .join(', ')}`
     );
   }
@@ -47,7 +45,7 @@ function buildChangeSummary(item) {
     summaries.push(`Merged: ${item.merged.prev} -> ${item.merged.next}`);
   }
   debug('summaries', summaries);
-  return summaries.join(', ');
+  return summaries.join('. ');
 }
 
 async function outputDiffToSummary({ added, removed, changed }) {
