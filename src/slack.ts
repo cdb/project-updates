@@ -1,6 +1,5 @@
 import { WebClient } from '@slack/web-api';
 import * as core from '@actions/core';
-import { link } from 'fs';
 
 const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
