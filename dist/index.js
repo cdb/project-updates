@@ -37727,11 +37727,7 @@ function comparator_diff(prev, next) {
 }
 /* harmony default export */ const comparator = ({ diff: comparator_diff });
 
-;// CONCATENATED MODULE: ./src/index.ts
-
-
-
-
+;// CONCATENATED MODULE: ./src/summary.ts
 
 
 function buildChangeSummary(item) {
@@ -37769,12 +37765,12 @@ function buildChangeSummary(item) {
     debug('summaries', summaries);
     return summaries.join('. ');
 }
-async function outputFirstRunSummary(added) {
+async function outputFirstRun(added) {
     core.summary.addRaw('\n## :information_source: First Run Detected');
     core.summary.addRaw(`\n\nImporting ${added.length} issues from the project but will not generate a slack message for this run.`);
     await writeSummary();
 }
-async function outputDiffToSummary({ added, removed, changed }) {
+async function outputDiff({ added, removed, changed }) {
     if (added.length > 0) {
         core.summary.addRaw('\n## :heavy_plus_sign: New Issues\n\n');
         added.forEach((item) => {
@@ -37809,6 +37805,19 @@ async function writeSummary() {
         debug('would write summary', core.summary.stringify());
     }
 }
+/* harmony default export */ const summary = ({
+    outputFirstRun,
+    outputDiff
+});
+
+;// CONCATENATED MODULE: ./src/index.ts
+
+
+
+
+
+
+
 async function run() {
     try {
         let isFirstRun = false;
@@ -37829,12 +37838,12 @@ async function run() {
         let diff = comparator.diff(oldItems, newItems);
         // Send a simple summary and return
         if (isFirstRun) {
-            await outputFirstRunSummary(newItems);
+            await summary.outputFirstRun(newItems);
             return;
         }
         // It's not the first run, lets diff it, and send real summaries
         outputs.diff(diff);
-        const msg = await outputDiffToSummary(diff);
+        const msg = await summary.outputDiff(diff);
         slack.sendMessage(msg);
     }
     catch (error) {
