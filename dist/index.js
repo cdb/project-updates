@@ -37505,7 +37505,7 @@ class GitHubProject {
 var rest_dist_node = __nccwpck_require__(3056);
 ;// CONCATENATED MODULE: ./src/helpers.ts
 
-function debug(name, obj) {
+function debug(name, obj = {}) {
     core.debug(`${name}: ${JSON.stringify(obj)}`);
 }
 
@@ -37541,6 +37541,7 @@ async function getOldItems() {
     }
     catch (err) {
         core.error(err);
+        return { items: [], sha: '', error: err };
     }
     return { items, sha };
 }
@@ -37768,6 +37769,11 @@ function buildChangeSummary(item) {
     debug('summaries', summaries);
     return summaries.join('. ');
 }
+async function outputFirstRunSummary(added) {
+    core.summary.addRaw('\n## :information_source: First Run Detected');
+    core.summary.addRaw(`\n\nImporting #{added.length} issues from the project but will not generate a slack message for this run.`);
+    await writeSummary();
+}
 async function outputDiffToSummary({ added, removed, changed }) {
     if (added.length > 0) {
         core.summary.addRaw('\n## :heavy_plus_sign: New Issues\n\n');
@@ -37791,6 +37797,10 @@ async function outputDiffToSummary({ added, removed, changed }) {
     if (added.length + removed.length + changed.length === 0) {
         core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
     }
+    await writeSummary();
+    return summaryWithoutNull;
+}
+async function writeSummary() {
     const pathFromEnv = process.env['GITHUB_STEP_SUMMARY'];
     if (pathFromEnv) {
         core.summary.write();
@@ -37798,16 +37808,31 @@ async function outputDiffToSummary({ added, removed, changed }) {
     else {
         debug('would write summary', core.summary.stringify());
     }
-    return summaryWithoutNull;
 }
 async function run() {
     try {
-        let { items: oldItems, sha } = await api.getOldItems();
-        debug('oldItems', oldItems);
+        let isFirstRun = false;
+        let { items: oldItems, sha, error } = await api.getOldItems();
+        if (error) {
+            debug('error', error);
+            if (error.status === 404) {
+                debug('first run');
+                isFirstRun = true;
+            }
+        }
+        else {
+            debug('oldItems', oldItems);
+        }
         let newItems = await api.getNewItems();
         debug('newItems:', newItems);
-        await api.saveItems(newItems, sha);
+        // await api.saveItems(newItems, sha);
         let diff = comparator.diff(oldItems, newItems);
+        // Send a simple summary and return
+        if (isFirstRun) {
+            await outputFirstRunSummary(newItems);
+            return;
+        }
+        // It's not the first run, lets diff it, and send real summaries
         outputs.diff(diff);
         const msg = await outputDiffToSummary(diff);
         slack.sendMessage(msg);
