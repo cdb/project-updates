@@ -14,12 +14,12 @@ jobs:
         id: project-action
         with:
           token: ${{ secrets.BBQ_ORG_TOKEN }}
-          organization: "bbq-beets"
+          organization: bbq-beets
           project_number: 2
-          storage_repo: "cdb-test-webhooks"
-          storage_path: "data/projects.json"
-          committer_name: "Project Action Bot"
-          committer_email: "cdb@github.com"
+          storage_repo: cdb-test-webhooks
+          storage_path: data/dispatch-p2-test-a.json
+          committer_name: Project Action Bot
+          committer_email: cdb@github.com
           slack_token: ${{ secrets.CDB_SLACK_TOKEN }}
           slack_channel: ${{ secrets.CDB_SLACK_CHANNEL }}
           custom_fields: blah
