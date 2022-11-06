@@ -65,7 +65,7 @@ async function getNewItems() {
           // TODO: Smarter filters, this is only fields
           debug(
             `skipping item due to filter (${filterKey}|${filterValue}): `,
-            filter
+            item
           );
           continue itemLoop;
         }
