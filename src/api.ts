@@ -16,7 +16,12 @@ const committerEmail = core.getInput('committer_email');
 const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
 
-async function getOldItems() {
+interface OldItems {
+  items: any;
+  sha: string;
+  error?: any;
+}
+async function getOldItems(): Promise<OldItems> {
   let items = {};
   let sha = undefined;
   try {
@@ -31,11 +36,27 @@ async function getOldItems() {
     sha = data.sha;
   } catch (err) {
     core.error(err);
+    return { items: [], sha: '', error: err };
   }
   return { items, sha };
 }
 
-async function getNewItems() {
+export interface NewItemsMap {
+  [key: string]: NewItem;
+}
+
+export interface NewItem {
+  type: string;
+  title: string;
+  status: string;
+  labels: string;
+  url: string;
+  closed: string;
+  merged: string;
+  assignees: string;
+}
+
+async function getNewItems(): Promise<NewItemsMap> {
   let fields = { status: 'status' };
   if (customFields) {
     fields = customFields.split(',').reduce((acc, field) => {
@@ -58,7 +79,7 @@ async function getNewItems() {
   });
 
   const items: any[] = await project.items.list();
-  let data: any = {};
+  let data: NewItemsMap = {};
   itemLoop: for (const item of items) {
     // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
     if (item.content?.id === undefined) {

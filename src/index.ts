@@ -1,5 +1,5 @@
 import { summary, setFailed } from '@actions/core';
-import api from './api';
+import api, { NewItemsMap } from './api';
 import outputs from './outputs';
 import { debug } from './helpers';
 import slack from './slack';
@@ -55,6 +55,14 @@ function buildChangeSummary(item) {
   return summaries.join('. ');
 }
 
+async function outputFirstRunSummary(added: NewItemsMap) {
+  summary.addRaw('\n## :information_source: First Run Detected');
+  summary.addRaw(
+    `\n\nImporting #{added.length} issues from the project but will not generate a slack message for this run.`
+  );
+  await writeSummary();
+}
+
 async function outputDiffToSummary({ added, removed, changed }) {
   if (added.length > 0) {
     summary.addRaw('\n## :heavy_plus_sign: New Issues\n\n');
@@ -87,26 +95,46 @@ async function outputDiffToSummary({ added, removed, changed }) {
     );
   }
 
+  await writeSummary();
+  return summaryWithoutNull;
+}
+
+async function writeSummary() {
   const pathFromEnv = process.env['GITHUB_STEP_SUMMARY'];
   if (pathFromEnv) {
     summary.write();
   } else {
     debug('would write summary', summary.stringify());
   }
-  return summaryWithoutNull;
 }
 
 async function run(): Promise<void> {
   try {
-    let { items: oldItems, sha } = await api.getOldItems();
-    debug('oldItems', oldItems);
+    let isFirstRun = false;
+    let { items: oldItems, sha, error } = await api.getOldItems();
+    if (error) {
+      debug('error', error);
+      if (error.status === 404) {
+        debug('first run');
+        isFirstRun = true;
+      }
+    } else {
+      debug('oldItems', oldItems);
+    }
 
     let newItems = await api.getNewItems();
     debug('newItems:', newItems);
 
-    await api.saveItems(newItems, sha);
+    // await api.saveItems(newItems, sha);
     let diff = comparator.diff(oldItems, newItems);
 
+    // Send a simple summary and return
+    if (isFirstRun) {
+      await outputFirstRunSummary(newItems);
+      return;
+    }
+
+    // It's not the first run, lets diff it, and send real summaries
     outputs.diff(diff);
     const msg = await outputDiffToSummary(diff);
     slack.sendMessage(msg);
