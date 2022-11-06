@@ -37558,7 +37558,12 @@ async function getNewItems() {
         octokit: octokit,
         fields: fields
     });
-    const filters = filterString.split(',').map((f) => f.split(':'));
+    const quotesRegex = /"([^"]*)"/g;
+    const filters = filterString.split(',').map(function (f) {
+        let [key, value] = f.split(':');
+        value = value.replace(quotesRegex, '$1');
+        return { key, value };
+    });
     const items = await project.items.list();
     let data = {};
     itemLoop: for (const item of items) {
@@ -37568,7 +37573,7 @@ async function getNewItems() {
         }
         else {
             for (const filter of filters) {
-                const [filterKey, filterValue] = filter;
+                const { key: filterKey, value: filterValue } = filter;
                 if (item.fields[filterKey] !== filterValue) {
                     // TODO: Smarter filters, this is only fields
                     debug(`skipping item due to filter (${filterKey}|${filterValue}): `, item);
