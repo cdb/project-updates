@@ -37503,7 +37503,14 @@ class GitHubProject {
 
 // EXTERNAL MODULE: ./node_modules/@octokit/rest/dist-node/index.js
 var rest_dist_node = __nccwpck_require__(3056);
+;// CONCATENATED MODULE: ./src/helpers.ts
+
+function debug(name, obj) {
+    core.debug(`${name}: ${JSON.stringify(obj)}`);
+}
+
 ;// CONCATENATED MODULE: ./src/api.ts
+
 
 
 
@@ -37560,11 +37567,11 @@ async function getNewItems() {
             continue;
         }
         else {
-            let skip = false;
             for (const filter of filters) {
                 const [filterKey, filterValue] = filter;
                 if (item.fields[filterKey] !== filterValue) {
                     // TODO: Smarter filters, this is only fields
+                    debug(`skipping item due to filter (${filterKey}|${filterValue}): `, filter);
                     continue itemLoop;
                 }
             }
@@ -37611,12 +37618,6 @@ function diff({ added, removed, changed }) {
     core.setOutput('changed', JSON.stringify(changed));
 }
 /* harmony default export */ const outputs = ({ diff });
-
-;// CONCATENATED MODULE: ./src/helpers.ts
-
-function debug(name, obj) {
-    core.debug(`${name}: ${JSON.stringify(obj)}`);
-}
 
 // EXTERNAL MODULE: ./node_modules/@slack/web-api/dist/index.js
 var dist = __nccwpck_require__(4335);
