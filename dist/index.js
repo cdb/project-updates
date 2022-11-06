@@ -37571,7 +37571,7 @@ async function getNewItems() {
                 const [filterKey, filterValue] = filter;
                 if (item.fields[filterKey] !== filterValue) {
                     // TODO: Smarter filters, this is only fields
-                    debug(`skipping item due to filter (${filterKey}|${filterValue}): `, filter);
+                    debug(`skipping item due to filter (${filterKey}|${filterValue}): `, item);
                     continue itemLoop;
                 }
             }
