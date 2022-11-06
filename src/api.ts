@@ -50,7 +50,12 @@ async function getNewItems() {
     fields: fields
   });
 
-  const filters = filterString.split(',').map((f) => f.split(':'));
+  const quotesRegex = /"([^"]*)"/g;
+  const filters = filterString.split(',').map(function (f) {
+    let [key, value] = f.split(':');
+    value = value.replace(quotesRegex, '$1');
+    return { key, value };
+  });
 
   const items: any[] = await project.items.list();
   let data: any = {};
@@ -60,7 +65,7 @@ async function getNewItems() {
       continue;
     } else {
       for (const filter of filters) {
-        const [filterKey, filterValue] = filter;
+        const { key: filterKey, value: filterValue } = filter;
         if (item.fields[filterKey] !== filterValue) {
           // TODO: Smarter filters, this is only fields
           debug(
