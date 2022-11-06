@@ -12,6 +12,8 @@ const storageRepo = core.getInput('storage_repo');
 const storagePath = core.getInput('storage_path');
 const committerName = core.getInput('committer_name');
 const committerEmail = core.getInput('committer_email');
+const customFields = core.getInput('custom_fields');
+const filterString = core.getInput('filter');
 
 async function getOldItems() {
   let items = {};
@@ -33,22 +35,39 @@ async function getOldItems() {
 }
 
 async function getNewItems() {
+  let fields = { status: 'status' };
+  if (customFields) {
+    fields = customFields.split(',').reduce((acc, field) => {
+      acc[field] = field;
+      return acc;
+    }, fields);
+  }
   const project = new GitHubProject({
     owner: organization,
     number: projectNumber,
     octokit: octokit,
-    fields: {
-      status: 'status'
-    }
+    fields: fields
   });
+
+  const filters = filterString.split(',').map((f) => f.split(':'));
 
   const items: any[] = await project.items.list();
   let data: any = {};
-  for (const item of items) {
+  itemLoop: for (const item of items) {
     // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
     if (item.content?.id === undefined) {
       continue;
     } else {
+      let skip = false;
+
+      for (const filter of filters) {
+        const [filterKey, filterValue] = filter;
+        if (item.fields[filterKey] !== filterValue) {
+          // TODO: Smarter filters, this is only fields
+          continue itemLoop;
+        }
+      }
+
       data[item.content.id] = {
         type: item.type,
         title: item.fields.title,
