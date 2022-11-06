@@ -23,7 +23,7 @@ jobs:
           slack_token: ${{ secrets.CDB_SLACK_TOKEN }}
           slack_channel: ${{ secrets.CDB_SLACK_CHANNEL }}
           custom_fields: blah
-          filter: blah:Boo
+          filter: blah:"space Space"
       - run: |
           echo "Output Added: ${{ steps.project-action.outputs.added }}"
           echo "Output Removed: ${{ steps.project-action.outputs.removed }}"
