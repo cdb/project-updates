@@ -12,8 +12,9 @@ function buildChangeSummary(item) {
     summaries.push(`Previous title: ${item.title.prev}`);
   }
   if (item.status) {
+    const extra = item.status.next == 'Done' ? ' :tada:' : '';
     summaries.push(
-      `Status: \`${item.status.prev}\` -> \`${item.status.next}\``
+      `Status: \`${item.status.prev}\` -> \`${item.status.next}\`${extra}`
     );
   }
   if (item.labels_added) {
@@ -39,10 +40,16 @@ function buildChangeSummary(item) {
     );
   }
   if (item.closed) {
-    summaries.push(`Closed: ${item.closed.prev} -> ${item.closed.next}`);
+    const extra = item.closed.next ? ':partying_face:' : '';
+    summaries.push(
+      `Closed: \`${item.closed.prev}\` -> \`${item.closed.next}\`${extra}`
+    );
   }
   if (item.merged) {
-    summaries.push(`Merged: ${item.merged.prev} -> ${item.merged.next}`);
+    const extra = item.merged.next ? ':partying_face:' : '';
+    summaries.push(
+      `Merged: \`${item.merged.prev}\` -> \`${item.merged.next}\`${extra}`
+    );
   }
   debug('summaries', summaries);
   return summaries.join('. ');
@@ -50,21 +57,21 @@ function buildChangeSummary(item) {
 
 async function outputDiffToSummary({ added, removed, changed }) {
   if (added.length > 0) {
-    summary.addRaw('\n## New Issues\n\n');
+    summary.addRaw('\n## :heavy_plus_sign: New Issues\n\n');
     added.forEach((item) => {
       summary.addRaw(`- [${item.title}](${item.url})\n`);
     });
   }
 
   if (removed.length > 0) {
-    summary.addRaw('\n## Removed Issues\n\n');
+    summary.addRaw('\n## :heavy_minus_sign: Removed Issues\n\n');
     removed.forEach((item) => {
       summary.addRaw(`- [${item.title}](${item.url})\n`);
     });
   }
 
   if (changed.length > 0) {
-    summary.addRaw('\n## Changed Issues\n\n');
+    summary.addRaw('\n## :curly_loop: Changed Issues\n\n');
     changed.forEach((item) => {
       summary.addRaw(
         `- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`
