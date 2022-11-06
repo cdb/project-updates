@@ -1,6 +1,7 @@
 import GitHubProject from 'github-project';
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
+import { debug } from './helpers';
 
 const octokit = new Octokit({
   auth: core.getInput('token')
@@ -58,12 +59,14 @@ async function getNewItems() {
     if (item.content?.id === undefined) {
       continue;
     } else {
-      let skip = false;
-
       for (const filter of filters) {
         const [filterKey, filterValue] = filter;
         if (item.fields[filterKey] !== filterValue) {
           // TODO: Smarter filters, this is only fields
+          debug(
+            `skipping item due to filter (${filterKey}|${filterValue}): `,
+            filter
+          );
           continue itemLoop;
         }
       }
