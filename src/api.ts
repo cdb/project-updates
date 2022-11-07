@@ -3,13 +3,18 @@ import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 import { debug } from './helpers';
 
-const octokit = new Octokit({
-  auth: core.getInput('token')
+const storageOctokit = new Octokit({
+  auth: core.getInput('storage_token')
 });
 
-const organization = core.getInput('organization');
+const projectOctokit = new Octokit({
+  auth: core.getInput('project_token')
+});
+
+const projectOrganization = core.getInput('project_organization');
 const projectNumber = parseInt(core.getInput('project_number'), 10);
-const storageRepo = core.getInput('storage_repo');
+const storageNWO = core.getInput('storage_repository');
+const [storageOwner, storageRepo] = storageNWO.split('/');
 const storagePath = core.getInput('storage_path');
 const committerName = core.getInput('committer_name');
 const committerEmail = core.getInput('committer_email');
@@ -25,8 +30,8 @@ async function getOldItems(): Promise<OldItems> {
   let items = {};
   let sha = undefined;
   try {
-    let { data }: { data: any } = await octokit.rest.repos.getContent({
-      owner: organization,
+    let { data }: { data: any } = await storageOctokit.rest.repos.getContent({
+      owner: storageOwner,
       repo: storageRepo,
       path: storagePath
     });
@@ -65,9 +70,9 @@ async function getNewItems(): Promise<NewItemsMap> {
     }, fields);
   }
   const project = new GitHubProject({
-    owner: organization,
+    owner: projectOrganization,
     number: projectNumber,
-    octokit: octokit,
+    octokit: projectOctokit,
     fields: fields
   });
 
@@ -114,8 +119,8 @@ async function getNewItems(): Promise<NewItemsMap> {
 
 async function saveItems(items, sha) {
   try {
-    await octokit.rest.repos.createOrUpdateFileContents({
-      owner: organization,
+    await storageOctokit.rest.repos.createOrUpdateFileContents({
+      owner: storageOwner,
       repo: storageRepo,
       path: storagePath,
       message: 'update', // TODO: Better message would be useful

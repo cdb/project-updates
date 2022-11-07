@@ -1,19 +1,24 @@
 name: 'Project Updates'
 description: 'Action to send the latest changes on a GitHub project to a Slack channel'
 inputs:
-  token:
-    description: 'Token with access to read the project and write to the storage repository'
+  project_token:
+    description: 'Token with access to read the project'
     required: true
-    default: ${{ github.token }}
-  organization:
+  project_organization:
     description: 'Organization that owns the project'
     required: true
+    default: ${{ github.repository_owner }}
   project_number:
     description: 'Project number'
     required: true
-  storage_repo:
+  storage_token:
+    description: 'Token with access to read and write to the storage repository'
+    required: true
+    default: ${{ github.token }}
+  storage_repository:
     description: 'Repository to store data in'
     required: true
+    default: ${{ github.repository }}
   storage_path:
     description: 'File in the repository to store data in, JSON format'
     required: true

@@ -13,17 +13,18 @@ jobs:
         uses: ./ # Uses an action in the root directory
         id: project-action
         with:
-          token: ${{ secrets.BBQ_ORG_TOKEN }}
-          organization: bbq-beets
+          project_token: ${{ secrets.BBQ_ORG_TOKEN }}
+          project_organization: bbq-beets
           project_number: 2
-          storage_repo: cdb-test-webhooks
+          custom_fields: blah
+          filter: blah:"space Space"
+          storage_repository: ${{ github.repository }}
           storage_path: data/dispatch-p2-test-a.json
+          storage_token: ${{ github.token }}
           committer_name: Project Action Bot
           committer_email: cdb@github.com
           slack_token: ${{ secrets.CDB_SLACK_TOKEN }}
           slack_channel: ${{ secrets.CDB_SLACK_CHANNEL }}
-          custom_fields: blah
-          filter: blah:"space Space"
       - run: |
           echo "Output Added: ${{ steps.project-action.outputs.added }}"
           echo "Output Removed: ${{ steps.project-action.outputs.removed }}"
