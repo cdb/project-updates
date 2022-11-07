@@ -37514,12 +37514,16 @@ function debug(name, obj = {}) {
 
 
 
-const octokit = new rest_dist_node/* Octokit */.v({
-    auth: core.getInput('token')
+const storageOctokit = new rest_dist_node/* Octokit */.v({
+    auth: core.getInput('storage_token')
 });
-const organization = core.getInput('organization');
+const projectOctokit = new rest_dist_node/* Octokit */.v({
+    auth: core.getInput('project_token')
+});
+const projectOrganization = core.getInput('project_organization');
 const projectNumber = parseInt(core.getInput('project_number'), 10);
-const storageRepo = core.getInput('storage_repo');
+const storageNWO = core.getInput('storage_repository');
+const [storageOwner, storageRepo] = storageNWO.split('/');
 const storagePath = core.getInput('storage_path');
 const committerName = core.getInput('committer_name');
 const committerEmail = core.getInput('committer_email');
@@ -37529,8 +37533,8 @@ async function getOldItems() {
     let items = {};
     let sha = undefined;
     try {
-        let { data } = await octokit.rest.repos.getContent({
-            owner: organization,
+        let { data } = await storageOctokit.rest.repos.getContent({
+            owner: storageOwner,
             repo: storageRepo,
             path: storagePath
         });
@@ -37554,9 +37558,9 @@ async function getNewItems() {
         }, fields);
     }
     const project = new GitHubProject({
-        owner: organization,
+        owner: projectOrganization,
         number: projectNumber,
-        octokit: octokit,
+        octokit: projectOctokit,
         fields: fields
     });
     const quotesRegex = /"([^"]*)"/g;
@@ -37597,8 +37601,8 @@ async function getNewItems() {
 }
 async function saveItems(items, sha) {
     try {
-        await octokit.rest.repos.createOrUpdateFileContents({
-            owner: organization,
+        await storageOctokit.rest.repos.createOrUpdateFileContents({
+            owner: storageOwner,
             repo: storageRepo,
             path: storagePath,
             message: 'update',
