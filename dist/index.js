@@ -37767,7 +37767,7 @@ function buildChangeSummary(item) {
 }
 async function outputFirstRun(added) {
     core.summary.addRaw('\n## :information_source: First Run Detected');
-    core.summary.addRaw(`\n\nImporting ${added.length} issues from the project but will not generate a slack message for this run.`);
+    core.summary.addRaw(`\n\nImporting ${added.size} issues from the project but will not generate a slack message for this run.`);
     await writeSummary();
 }
 async function outputDiff({ added, removed, changed }) {
@@ -37834,7 +37834,7 @@ async function run() {
         }
         let newItems = await api.getNewItems();
         debug('newItems:', newItems);
-        // await api.saveItems(newItems, sha);
+        await api.saveItems(newItems, sha);
         let diff = comparator.diff(oldItems, newItems);
         // Send a simple summary and return
         if (isFirstRun) {
