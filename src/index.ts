@@ -23,7 +23,7 @@ async function run(): Promise<void> {
     let newItems = await api.getNewItems();
     debug('newItems:', newItems);
 
-    // await api.saveItems(newItems, sha);
+    await api.saveItems(newItems, sha);
     let diff = comparator.diff(oldItems, newItems);
 
     // Send a simple summary and return
