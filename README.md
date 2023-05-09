@@ -25,3 +25,4 @@ jobs:
 Docs are...light...at the moment, after it's seen some real-world use we'll know if it's stable as-is.
 
 Heavily based on the ideas in https://github.com/andymckay/project-slack-notification but reworked for the "beta" projects structure.
+
