@@ -1,4 +1,4 @@
-name: Run Build
+name: Run Build - EDITED FROM FORK!
 on: push
 jobs:
   build-and-commit:
