@@ -72460,7 +72460,7 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 
 const storageOctokit = new rest_dist_node.Octokit({
     auth: core.getInput('storage_token'),
-    fetch: fetch,
+    fetch: fetch
 });
 const projectOrganization = core.getInput('project_organization');
 const projectNumber = parseInt(core.getInput('project_number'), 10);
@@ -72486,7 +72486,9 @@ async function getOldItems() {
         sha = data.sha;
     }
     catch (err) {
-        core.error(err);
+        if (err.status !== 404) {
+            core.error(err);
+        }
         return { items: [], sha: '', error: err };
     }
     return { items, sha };
@@ -72503,10 +72505,10 @@ async function getNewItems() {
         const project = new GitHubProject({
             owner: projectOrganization,
             number: projectNumber,
-            // @ts-ignore 
+            // @ts-ignore
             octokit: new rest_dist_node.Octokit({
                 auth: core.getInput('project_token'),
-                fetch: fetch,
+                fetch: fetch
             }),
             fields: fields
         });
