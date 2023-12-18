@@ -71,7 +71,11 @@ async function getNewItems(): Promise<NewItemsMap> {
     const project = new GitHubProject({
       owner: projectOrganization,
       number: projectNumber,
-      token: core.getInput('project_token'),
+      // @ts-ignore 
+      octokit: new Octokit({
+        auth: core.getInput('project_token'),
+        fetch: fetch,
+      }),
       fields: fields
     });
 
