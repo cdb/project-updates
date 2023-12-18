@@ -1,0 +1,14 @@
+{
+  "DI_lADOAf4wIs4AGrw5zgBZGts": {
+    "type": "DRAFT_ISSUE",
+    "title": "Not yet an issue",
+    "status": "Done",
+    "assignees": []
+  },
+  "DI_lADOAf4wIs4AGrw5zgBZKyY": {
+    "type": "DRAFT_ISSUE",
+    "title": "New thing",
+    "status": "Todo",
+    "assignees": []
+  }
+}
