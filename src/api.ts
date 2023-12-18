@@ -2,9 +2,11 @@ import GitHubProject from 'github-project';
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 import { debug } from './helpers';
+import fetch from "node-fetch";
 
 const storageOctokit = new Octokit({
-  auth: core.getInput('storage_token')
+  auth: core.getInput('storage_token'),
+  fetch: fetch,
 });
 
 const projectOrganization = core.getInput('project_organization');
