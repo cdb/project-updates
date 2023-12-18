@@ -82,11 +82,14 @@ async function getNewItems(): Promise<NewItemsMap> {
     });
 
     const quotesRegex = /"([^"]*)"/g;
-    const filters = filterString.split(',').map(function (f) {
-      let [key, value] = f.split(':');
-      value = value.replace(quotesRegex, '$1');
-      return { key, value };
-    });
+    let filters: any[] = [];
+    if (filterString !== '') {
+      filters = filterString.split(',').map(function (f) {
+        let [key, value] = f.split(':');
+        value = value.replace(quotesRegex, '$1');
+        return { key, value };
+      });
+    }
 
     const items: any[] = await project.items.list();
     let data: NewItemsMap = {};
