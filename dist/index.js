@@ -72513,11 +72513,14 @@ async function getNewItems() {
             fields: fields
         });
         const quotesRegex = /"([^"]*)"/g;
-        const filters = filterString.split(',').map(function (f) {
-            let [key, value] = f.split(':');
-            value = value.replace(quotesRegex, '$1');
-            return { key, value };
-        });
+        let filters = [];
+        if (filterString !== '') {
+            filters = filterString.split(',').map(function (f) {
+                let [key, value] = f.split(':');
+                value = value.replace(quotesRegex, '$1');
+                return { key, value };
+            });
+        }
         const items = await project.items.list();
         let data = {};
         itemLoop: for (const item of items) {
@@ -72590,12 +72593,11 @@ var web_api_dist = __nccwpck_require__(2583);
 
 const slackToken = core.getInput('slack_token');
 const channel = core.getInput('slack_channel');
-const linkFinderRegex = /\[([^\]]*)\]\(([^\)]*)\)/gim;
+const linkFinderRegex = /\[(.*?)\]\((.*?)\)/gim;
 const headingFinderRegex = /^## (.*)$/gim;
 function cleanMessage(msg) {
     let out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
     out = out.replaceAll(headingFinderRegex, '*$1*');
-    console.log('out', out);
     return out;
 }
 async function sendMessage(msg) {
