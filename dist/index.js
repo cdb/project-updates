@@ -72503,7 +72503,11 @@ async function getNewItems() {
         const project = new GitHubProject({
             owner: projectOrganization,
             number: projectNumber,
-            token: core.getInput('project_token'),
+            // @ts-ignore 
+            octokit: new rest_dist_node.Octokit({
+                auth: core.getInput('project_token'),
+                fetch: fetch,
+            }),
             fields: fields
         });
         const quotesRegex = /"([^"]*)"/g;
