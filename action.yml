@@ -47,5 +47,5 @@ outputs:
     description: 'Cards changed since last run'
 
 runs:
-  using: 'node16'
+  using: 'node18'
   main: 'dist/index.js'
