@@ -2,11 +2,11 @@ import GitHubProject from 'github-project';
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 import { debug } from './helpers';
-import fetch from "node-fetch";
+import fetch from 'node-fetch';
 
 const storageOctokit = new Octokit({
   auth: core.getInput('storage_token'),
-  fetch: fetch,
+  fetch: fetch
 });
 
 const projectOrganization = core.getInput('project_organization');
@@ -38,7 +38,9 @@ async function getOldItems(): Promise<OldItems> {
     }
     sha = data.sha;
   } catch (err) {
-    core.error(err);
+    if (err.status !== 404) {
+      core.error(err);
+    }
     return { items: [], sha: '', error: err };
   }
   return { items, sha };
@@ -71,10 +73,10 @@ async function getNewItems(): Promise<NewItemsMap> {
     const project = new GitHubProject({
       owner: projectOrganization,
       number: projectNumber,
-      // @ts-ignore 
+      // @ts-ignore
       octokit: new Octokit({
         auth: core.getInput('project_token'),
-        fetch: fetch,
+        fetch: fetch
       }),
       fields: fields
     });
