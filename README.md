@@ -26,3 +26,6 @@ Docs are...light...at the moment, after it's seen some real-world use we'll know
 
 Heavily based on the ideas in https://github.com/andymckay/project-slack-notification but reworked for the "beta" projects structure.
 
+### Known issues
+
+- Storing the data required the abililty for the passed in token to commit to the default branch of the repo the workflow is running in. This might conflict with any pre-defined branch protections you have on that.
