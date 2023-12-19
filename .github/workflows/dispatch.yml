@@ -9,6 +9,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Run Project Action
         uses: ./ # Uses an action in the root directory
         id: project-action

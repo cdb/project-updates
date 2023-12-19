@@ -2,13 +2,11 @@ import GitHubProject from 'github-project';
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 import { debug } from './helpers';
+import fetch from 'node-fetch';
 
 const storageOctokit = new Octokit({
-  auth: core.getInput('storage_token')
-});
-
-const projectOctokit = new Octokit({
-  auth: core.getInput('project_token')
+  auth: core.getInput('storage_token'),
+  fetch: fetch
 });
 
 const projectOrganization = core.getInput('project_organization');
@@ -40,7 +38,9 @@ async function getOldItems(): Promise<OldItems> {
     }
     sha = data.sha;
   } catch (err) {
-    core.error(err);
+    if (err.status !== 404) {
+      core.error(err);
+    }
     return { items: [], sha: '', error: err };
   }
   return { items, sha };
@@ -62,59 +62,71 @@ export interface NewItem {
 }
 
 async function getNewItems(): Promise<NewItemsMap> {
-  let fields = { status: 'status' };
-  if (customFields) {
-    fields = customFields.split(',').reduce((acc, field) => {
-      acc[field] = field;
-      return acc;
-    }, fields);
-  }
-  const project = new GitHubProject({
-    owner: projectOrganization,
-    number: projectNumber,
-    octokit: projectOctokit,
-    fields: fields
-  });
-
-  const quotesRegex = /"([^"]*)"/g;
-  const filters = filterString.split(',').map(function (f) {
-    let [key, value] = f.split(':');
-    value = value.replace(quotesRegex, '$1');
-    return { key, value };
-  });
-
-  const items: any[] = await project.items.list();
-  let data: NewItemsMap = {};
-  itemLoop: for (const item of items) {
-    // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
-    if (item.content?.id === undefined) {
-      continue;
-    } else {
-      for (const filter of filters) {
-        const { key: filterKey, value: filterValue } = filter;
-        if (item.fields[filterKey] !== filterValue) {
-          // TODO: Smarter filters, this is only fields
-          debug(
-            `skipping item due to filter (${filterKey}|${filterValue}): `,
-            item
-          );
-          continue itemLoop;
-        }
-      }
-
-      data[item.content.id] = {
-        type: item.type,
-        title: item.fields.title,
-        status: item.fields.status,
-        labels: item.content.labels,
-        url: item.content.url,
-        closed: item.content.closed,
-        merged: item.content.merged,
-        assignees: item.content.assignees
-      };
+  try {
+    let fields = { status: 'status' };
+    if (customFields) {
+      fields = customFields.split(',').reduce((acc, field) => {
+        acc[field] = field;
+        return acc;
+      }, fields);
     }
+    const project = new GitHubProject({
+      owner: projectOrganization,
+      number: projectNumber,
+      // @ts-ignore
+      octokit: new Octokit({
+        auth: core.getInput('project_token'),
+        fetch: fetch
+      }),
+      fields: fields
+    });
+
+    const quotesRegex = /"([^"]*)"/g;
+    let filters: any[] = [];
+    if (filterString !== '') {
+      filters = filterString.split(',').map(function (f) {
+        let [key, value] = f.split(':');
+        value = value.replace(quotesRegex, '$1');
+        return { key, value };
+      });
+    }
+
+    const items: any[] = await project.items.list();
+    let data: NewItemsMap = {};
+    itemLoop: for (const item of items) {
+      // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
+      if (item.content?.id === undefined) {
+        continue;
+      } else {
+        for (const filter of filters) {
+          const { key: filterKey, value: filterValue } = filter;
+          if (item.fields[filterKey] !== filterValue) {
+            // TODO: Smarter filters, this is only fields
+            debug(
+              `skipping item due to filter (${filterKey}|${filterValue}): `,
+              item
+            );
+            continue itemLoop;
+          }
+        }
+
+        data[item.content.id] = {
+          type: item.type,
+          title: item.fields.title,
+          status: item.fields.status,
+          labels: item.content.labels,
+          url: item.content.url,
+          closed: item.content.closed,
+          merged: item.content.merged,
+          assignees: item.content.assignees
+        };
+      }
+    }
+    return data;
+  } catch (err) {
+    core.error(err);
+    return {};
   }
-  return data;
 }
 
 async function saveItems(items, sha) {
