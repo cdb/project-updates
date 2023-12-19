@@ -87,7 +87,13 @@ async function getNewItems(): Promise<NewItemsMap> {
       filters = filterString.split(',').map(function (f) {
         let [key, value] = f.split(':');
         value = value.replace(quotesRegex, '$1');
-        return { key, value };
+
+        let include = true;
+        if (key.startsWith('-')) {
+          include = false;
+          key = key.substring(1);
+        }
+        return { key, value, include };
       });
     }
 
@@ -99,11 +105,13 @@ async function getNewItems(): Promise<NewItemsMap> {
         continue;
       } else {
         for (const filter of filters) {
-          const { key: filterKey, value: filterValue } = filter;
-          if (item.fields[filterKey] !== filterValue) {
+          const { key, value, include } = filter;
+          if (
+            include ? item.fields[key] !== value : item.fields[key] === value
+          ) {
             // TODO: Smarter filters, this is only fields
             debug(
-              `skipping item due to filter (${filterKey}|${filterValue}): `,
+              `skipping item due to filter (${key}|${value}|${include}): `,
               item
             );
             continue itemLoop;
