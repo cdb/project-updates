@@ -58,12 +58,17 @@ function buildChanges(prev, next) {
 function diff(prev, next) {
   let added = []; // TODO: Handle type:DRAFT_ISSUE->type:ISSUE as a change not add/drop
   let removed = [];
+  let closed = [];
   let changed = [];
   for (const id in prev) {
     if (!(id in next)) {
       removed.push(prev[id]);
     } else if (JSON.stringify(prev[id]) !== JSON.stringify(next[id])) {
-      changed.push(buildChanges(prev[id], next[id]));
+      if (next[id].closed) {
+        closed.push(next[id]);
+      } else {
+        changed.push(buildChanges(prev[id], next[id]));
+      }
     }
   }
   for (const id in next) {
@@ -72,7 +77,7 @@ function diff(prev, next) {
     }
   }
 
-  return { added, removed, changed };
+  return { added, removed, changed, closed };
 }
 
 export default { diff };
