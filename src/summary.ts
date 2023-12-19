@@ -60,26 +60,33 @@ async function outputFirstRun(added: NewItemsMap) {
   await writeSummary();
 }
 
-async function outputDiff({ added, removed, changed }) {
+async function outputDiff({ added, removed, changed, closed }) {
   if (added.length > 0) {
-    summary.addRaw('\n## :heavy_plus_sign: New Issues\n\n');
     added.forEach((item) => {
-      summary.addRaw(`- [${item.title}](${item.url})\n`);
-    });
-  }
-
-  if (removed.length > 0) {
-    summary.addRaw('\n## :heavy_minus_sign: Removed Issues\n\n');
-    removed.forEach((item) => {
-      summary.addRaw(`- [${item.title}](${item.url})\n`);
+      summary.addRaw(
+        `- :heavy_plus_sign: [${item.title}](${item.url}) was added to the board\n`
+      );
     });
   }
 
   if (changed.length > 0) {
-    summary.addRaw('\n## :curly_loop: Changed Issues\n\n');
     changed.forEach((item) => {
       summary.addRaw(
         `- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`
+      );
+    });
+  }
+
+  if (closed.length > 0) {
+    closed.forEach((item) => {
+      summary.addRaw(`- :tada: [${item.title}](${item.url}) was closed!\n`);
+    });
+  }
+
+  if (removed.length > 0) {
+    removed.forEach((item) => {
+      summary.addRaw(
+        `- :no_entry_sign: [${item.title}](${item.url}) was removed from the board\n`
       );
     });
   }
