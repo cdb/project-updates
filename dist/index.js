@@ -72669,13 +72669,19 @@ function buildChanges(prev, next) {
 function comparator_diff(prev, next) {
     let added = []; // TODO: Handle type:DRAFT_ISSUE->type:ISSUE as a change not add/drop
     let removed = [];
+    let closed = [];
     let changed = [];
     for (const id in prev) {
         if (!(id in next)) {
             removed.push(prev[id]);
         }
         else if (JSON.stringify(prev[id]) !== JSON.stringify(next[id])) {
-            changed.push(buildChanges(prev[id], next[id]));
+            if (next[id].closed) {
+                closed.push(next[id]);
+            }
+            else {
+                changed.push(buildChanges(prev[id], next[id]));
+            }
         }
     }
     for (const id in next) {
@@ -72683,7 +72689,7 @@ function comparator_diff(prev, next) {
             added.push(next[id]);
         }
     }
-    return { added, removed, changed };
+    return { added, removed, changed, closed };
 }
 /* harmony default export */ const comparator = ({ diff: comparator_diff });
 
@@ -72730,23 +72736,25 @@ async function outputFirstRun(added) {
     core.summary.addRaw(`\n\nImporting ${added.size} issues from the project but will not generate a slack message for this run.`);
     await writeSummary();
 }
-async function outputDiff({ added, removed, changed }) {
+async function outputDiff({ added, removed, changed, closed }) {
     if (added.length > 0) {
-        core.summary.addRaw('\n## :heavy_plus_sign: New Issues\n\n');
         added.forEach((item) => {
-            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
-        });
-    }
-    if (removed.length > 0) {
-        core.summary.addRaw('\n## :heavy_minus_sign: Removed Issues\n\n');
-        removed.forEach((item) => {
-            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
+            core.summary.addRaw(`- :heavy_plus_sign: [${item.title}](${item.url}) was added to the board\n`);
         });
     }
     if (changed.length > 0) {
-        core.summary.addRaw('\n## :curly_loop: Changed Issues\n\n');
         changed.forEach((item) => {
             core.summary.addRaw(`- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`);
+        });
+    }
+    if (closed.length > 0) {
+        closed.forEach((item) => {
+            core.summary.addRaw(`- :tada: [${item.title}](${item.url}) was closed!\n`);
+        });
+    }
+    if (removed.length > 0) {
+        removed.forEach((item) => {
+            core.summary.addRaw(`- :no_entry_sign: [${item.title}](${item.url}) was removed from the board\n`);
         });
     }
     const summaryWithoutNull = core.summary.stringify();
