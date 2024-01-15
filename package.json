@@ -24,7 +24,7 @@
     "@octokit/types": "^12.4.0",
     "@types/lodash": "^4.14.188",
     "@types/node": "^20.10.5",
-    "prettier": "^3.1.1",
+    "prettier": "^3.2.2",
     "typescript": "^5.3.3"
   }
 }
