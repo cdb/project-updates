@@ -21,7 +21,7 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@octokit/types": "^12.4.0",
+    "@octokit/types": "^12.5.0",
     "@types/lodash": "^4.14.188",
     "@types/node": "^20.10.5",
     "prettier": "^3.1.1",
