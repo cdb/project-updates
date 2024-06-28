@@ -28,10 +28,6 @@ inputs:
   committer_email:
     description: 'Email for committer'
     required: true
-  slack_token:
-    description: 'Slack token'
-  slack_channel:
-    description: 'Slack channel to send messages to'
   custom_fields:
     description: 'Custom fields from the project board to use, comma separated'
     required: false
@@ -39,12 +35,8 @@ inputs:
     description: 'Filter to apply to the project board, in format `key:value key2:value2`'
     required: false
 outputs:
-  added:
-    description: 'Cards added since last run'
-  removed:
-    description: 'Cards removed since last run'
-  changed:
-    description: 'Cards changed since last run'
+  updates:
+    description: 'All updates to be sent to Slack'
 
 runs:
   using: 'node20'
