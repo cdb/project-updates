@@ -1,8 +1,7 @@
-import { setFailed } from '@actions/core';
+import { setFailed, setOutput } from '@actions/core';
 import api, { NewItemsMap } from './api';
 import outputs from './outputs';
 import { debug } from './helpers';
-import slack from './slack';
 import comparator from './comparator';
 import summary from './summary';
 
@@ -35,7 +34,7 @@ async function run(): Promise<void> {
     // It's not the first run, lets diff it, and send real summaries
     outputs.diff(diff);
     const msg = await summary.outputDiff(diff);
-    slack.sendMessage(msg);
+    setOutput('updates', msg);
   } catch (error) {
     setFailed(error.message);
   }

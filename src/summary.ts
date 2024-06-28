@@ -2,6 +2,16 @@ import { summary, setFailed } from '@actions/core';
 import { debug } from './helpers';
 import { NewItemsMap } from './api';
 
+const linkFinderRegex = /\[(.*?)\]\((.*?)\)/gim;
+const headingFinderRegex = /^## (.*)$/gim;
+
+function cleanMessage(msg: string): string {
+  if (!msg || msg === '') return '';
+  let out = msg.replaceAll(linkFinderRegex, '<$2|$1>');
+  out = out.replaceAll(headingFinderRegex, '*$1*');
+  return out;
+}
+
 function buildChangeSummary(item) {
   // TODO: Probably better ways to describe each change type
   let summaries = [];
@@ -100,7 +110,7 @@ async function outputDiff({ added, removed, changed, closed }) {
   }
 
   await writeSummary();
-  return summaryWithoutNull;
+  return cleanMessage(summaryWithoutNull);
 }
 
 async function writeSummary() {
