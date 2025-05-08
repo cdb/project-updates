@@ -161,9 +161,16 @@ async function saveItems(items, sha) {
     };
     
     // Only add the branch property if a branch name is specified
-    if (branchName) {
+    if (branchName && branchName.trim() !== '') {
+      // Add debug to verify branch name
+      debug(`Using branch: "${branchName}" for commit`);
       commitOptions.branch = branchName;
+    } else {
+      debug('No branch specified, using default branch');
     }
+
+    // Debug the final commit options
+    debug('Commit options:', JSON.stringify(commitOptions));
     
     await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
   } catch (err) {
