@@ -22,6 +22,9 @@ inputs:
   storage_path:
     description: 'File in the repository to store data in, JSON format'
     required: true
+  branch:
+    description: 'Branch to commit data changes to, defaults to the default branch of the repository'
+    required: false
   committer_name:
     description: 'Name to commit data changes as'
     required: true

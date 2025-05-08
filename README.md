@@ -25,7 +25,7 @@ jobs:
   project-updates:
     runs-on: ubuntu-latest
     steps:
-      - uses: cdb/project-updates
+      - uses: guo-chris/project-updates
         with:
           project_token: ${{ secrets.ADD_TO_PROJECT_PAT }} # Token with access to read from the project
           project_organization: my-org # Organization that owns the project
@@ -33,6 +33,7 @@ jobs:
           storage_token: ${{ github.token }} # Token with access to write to the storage repository
           storage_repository: ${{ github.repository }} # Repository to store data in
           storage_path: project-updates/datafile.json # File path for where to store the data
+          branch: project-updates # Optional branch name for file edits (default: repo default branch)
           committer_name: cdb # Name to commit as
           committer_email: cdb@my-org.com # Email to commit as
           slack_token: ${{ secrets.SLACK_BOT_TOKEN }} # Slack token - Leave blank to skip posting to slack
