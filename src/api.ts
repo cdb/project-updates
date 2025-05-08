@@ -18,6 +18,7 @@ const committerName = core.getInput('committer_name');
 const committerEmail = core.getInput('committer_email');
 const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
+const branchName = core.getInput('branch') || '';
 
 interface OldItems {
   items: any;
@@ -28,11 +29,18 @@ async function getOldItems(): Promise<OldItems> {
   let items = {};
   let sha = undefined;
   try {
-    let { data }: { data: any } = await storageOctokit.rest.repos.getContent({
+    const contentOptions: any = {
       owner: storageOwner,
       repo: storageRepo,
       path: storagePath
-    });
+    };
+
+    // Only add the branch parameter if a branch name is specified
+    if (branchName) {
+      contentOptions.ref = branchName;
+    }
+
+    let { data }: { data: any } = await storageOctokit.rest.repos.getContent(contentOptions);
     if (data.content != 'undefined') {
       items = JSON.parse(Buffer.from(data.content, 'base64').toString());
     }
@@ -139,7 +147,7 @@ async function getNewItems(): Promise<NewItemsMap> {
 
 async function saveItems(items, sha) {
   try {
-    await storageOctokit.rest.repos.createOrUpdateFileContents({
+    const commitOptions: any = {
       owner: storageOwner,
       repo: storageRepo,
       path: storagePath,
@@ -150,7 +158,14 @@ async function saveItems(items, sha) {
         name: committerName,
         email: committerEmail
       }
-    });
+    };
+    
+    // Only add the branch property if a branch name is specified
+    if (branchName) {
+      commitOptions.branch = branchName;
+    }
+    
+    await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
   } catch (err) {
     core.error(err);
   }
