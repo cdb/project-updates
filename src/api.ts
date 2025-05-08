@@ -175,6 +175,7 @@ async function saveItems(items, sha) {
     await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
   } catch (err) {
     core.error(err);
+    core.setFailed(`Error saving items: ${err}`);
   }
 }
 
