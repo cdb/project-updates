@@ -17,12 +17,12 @@ jobs:
         id: project-action
         with:
           project_token: ${{ secrets.BBQ_ORG_TOKEN }}
-          project_organization: bbq-beets
-          project_number: 2
+          project_organization: cdb
+          project_number: 7
           custom_fields: blah
           filter: blah:"space Space"
           storage_repository: ${{ github.repository }}
-          storage_path: data/dispatch-p2-test-a.json
+          storage_path: data/test-data-july25.json
           storage_token: ${{ github.token }}
           committer_name: Project Action Bot
           committer_email: cdb@github.com
