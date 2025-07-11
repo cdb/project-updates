@@ -16,7 +16,7 @@
     "@actions/github": "^6.0.0",
     "@octokit/rest": "^20.0.2",
     "@slack/web-api": "^6.7.2",
-    "github-project": "^3.0.2",
+    "github-project": "^5.4.0",
     "lodash": "^4.17.21",
     "node-fetch": "^3.3.2"
   },
