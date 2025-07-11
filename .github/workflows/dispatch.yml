@@ -19,11 +19,11 @@ jobs:
           project_token: ${{ secrets.TMP_PROJECT_PAT }}
           project_organization: cdb
           project_number: 7
-          custom_fields: blah
-          filter: blah:"space Space"
-          storage_repository: ${{ github.repository }}
+          custom_fields: Iteration
+          filter: Iteration:July
+          storage_repository: cdb/project-updates-dev
           storage_path: data/test-data-july25.json
-          storage_token: ${{ github.token }}
+          storage_token: ${{ secrets.TMP_PROJECT_PAT }}
           committer_name: Project Action Bot
           committer_email: cdb@github.com
       - run: |
