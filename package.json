@@ -17,7 +17,7 @@
     "@actions/github": "^6.0.0",
     "@octokit/rest": "^20.0.2",
     "@slack/web-api": "^6.7.2",
-    "github-project": "^3.0.2",
+    "github-project": "^5.4.2",
     "lodash": "^4.17.21",
     "node-fetch": "^3.3.2"
   },
@@ -26,6 +26,7 @@
     "@types/lodash": "^4.14.188",
     "@types/node": "^20.10.5",
     "@vercel/ncc": "^0.38.3",
+    "dotenv": "^17.2.0",
     "prettier": "^3.1.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
