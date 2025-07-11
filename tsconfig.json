@@ -3,9 +3,12 @@
     "outDir": "./dist",
     "allowJs": true,
     "target": "es2021",
-    "module": "es2022",
-    "moduleResolution": "node",
-    "noEmitOnError": false
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmitOnError": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true
   },
   "include": ["./src/**/*"]
 }

@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "ncc build src/index.ts --out ./dist"
+    "build": "ncc build src/index.ts --out ./dist",
+    "dev": "node --loader ts-node/esm src/index.ts"
   },
   "keywords": [],
   "author": "Cameron Booth",
@@ -24,8 +25,9 @@
     "@octokit/types": "^12.4.0",
     "@types/lodash": "^4.14.188",
     "@types/node": "^20.10.5",
+    "@vercel/ncc": "^0.38.3",
     "prettier": "^3.1.1",
-    "typescript": "^5.3.3",
-    "@vercel/ncc": "^0.38.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }

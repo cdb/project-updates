@@ -1,6 +1,6 @@
 import { summary, setFailed } from '@actions/core';
-import { debug } from './helpers';
-import { NewItemsMap } from './api';
+import { debug } from './helpers.js';
+import { NewItemsMap } from './api.js';
 
 const linkFinderRegex = /\[(.*?)\]\((.*?)\)/gim;
 const headingFinderRegex = /^## (.*)$/gim;
