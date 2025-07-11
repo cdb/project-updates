@@ -16,7 +16,7 @@ jobs:
         uses: ./ # Uses an action in the root directory
         id: project-action
         with:
-          project_token: ${{ secrets.BBQ_ORG_TOKEN }}
+          project_token: ${{ secrets.TMP_PROJECT_PAT }}
           project_organization: cdb
           project_number: 7
           custom_fields: blah
