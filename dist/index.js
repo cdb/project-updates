@@ -59458,7 +59458,7 @@ function buildChangeSummary(item) {
 }
 async function outputFirstRun(added) {
     core.summary.addRaw('\n## :information_source: First Run Detected');
-    core.summary.addRaw(`\n\nImporting ${added.size} issues from the project but will not generate a slack message for this run.`);
+    core.summary.addRaw(`\n\nImporting ${added.size} issues from the project but will not generate output for this run.`);
     await writeSummary();
 }
 async function outputDiff({ added, removed, changed, closed }) {

@@ -65,7 +65,7 @@ function buildChangeSummary(item) {
 async function outputFirstRun(added: NewItemsMap) {
   summary.addRaw('\n## :information_source: First Run Detected');
   summary.addRaw(
-    `\n\nImporting ${added.size} issues from the project but will not generate a slack message for this run.`
+    `\n\nImporting ${added.size} issues from the project but will not generate output for this run.`
   );
   await writeSummary();
 }

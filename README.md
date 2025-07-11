@@ -1,11 +1,11 @@
 # project-updates
 
-An action to update your slack with what's changed on a project board:
+An action to see what's changed on a project board:
 
 - Reads from V2 projects on GitHub
 - Stores data as a JSON file committed to a repository
 - Accepts field filters to narrow down issues returned
-- Post changes (add/remove/changed/completed) to as Slack channel
+- Outputs changes (add/remove/changed/completed) which can then be used however wanted (such as sent to a slack channel)
 - Can output to a summary on the check run
 
 Example configuration:
@@ -36,8 +36,6 @@ jobs:
           branch: project-updates # Optional branch name for file edits (default: repo default branch)
           committer_name: cdb # Name to commit as
           committer_email: cdb@my-org.com # Email to commit as
-          slack_token: ${{ secrets.SLACK_BOT_TOKEN }} # Slack token - Leave blank to skip posting to slack
-          slack_channel: C01234ABCD # Slack channel to send messages to
           custom_fields: Project # Custom fields from the project board to use, comma separated
           filter: Project:"some project" # Filters to apply to the project board, comma separated, start with '-' for exclusion vs inclusion
 ```
