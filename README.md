@@ -25,7 +25,7 @@ jobs:
   project-updates:
     runs-on: ubuntu-latest
     steps:
-      - uses: guo-chris/project-updates
+      - uses: cdb/project-updates
         with:
           project_token: ${{ secrets.ADD_TO_PROJECT_PAT }} # Token with access to read from the project
           project_organization: my-org # Organization that owns the project
