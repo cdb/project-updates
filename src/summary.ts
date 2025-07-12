@@ -16,7 +16,7 @@ function buildChangeSummary(item) {
   // TODO: Probably better ways to describe each change type
   let summaries = [];
   if (item.previous_title) {
-    summaries.push(`Previous title: ${item.title.prev}`);
+    summaries.push(`Previous title: ${item.previous_title}`);
   }
   if (item.status) {
     const extra = item.status.next == 'Done' ? ' :tada:' : '';
