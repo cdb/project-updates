@@ -1,9 +1,9 @@
 import { setFailed, setOutput } from '@actions/core';
-import api, { NewItemsMap } from './api';
-import outputs from './outputs';
-import { debug } from './helpers';
-import comparator from './comparator';
-import summary from './summary';
+import api, { NewItemsMap } from './api.js';
+import outputs from './outputs.js';
+import { debug } from './helpers.js';
+import comparator from './comparator.js';
+import summary from './summary.js';
 
 async function run(): Promise<void> {
   try {

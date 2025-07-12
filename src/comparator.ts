@@ -1,5 +1,7 @@
-import { difference } from 'lodash';
-import { debug } from './helpers';
+import lodash from 'lodash';
+import { debug } from './helpers.js';
+
+const { difference } = lodash;
 
 interface Change {
   title: string;

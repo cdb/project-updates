@@ -1,6 +1,6 @@
 import { summary, setFailed } from '@actions/core';
-import { debug } from './helpers';
-import { NewItemsMap } from './api';
+import { debug } from './helpers.js';
+import { NewItemsMap } from './api.js';
 
 const linkFinderRegex = /\[(.*?)\]\((.*?)\)/gim;
 const headingFinderRegex = /^## (.*)$/gim;
@@ -16,7 +16,7 @@ function buildChangeSummary(item) {
   // TODO: Probably better ways to describe each change type
   let summaries = [];
   if (item.previous_title) {
-    summaries.push(`Previous title: ${item.title.prev}`);
+    summaries.push(`Previous title: ${item.previous_title}`);
   }
   if (item.status) {
     const extra = item.status.next == 'Done' ? ' :tada:' : '';
@@ -65,7 +65,7 @@ function buildChangeSummary(item) {
 async function outputFirstRun(added: NewItemsMap) {
   summary.addRaw('\n## :information_source: First Run Detected');
   summary.addRaw(
-    `\n\nImporting ${added.size} issues from the project but will not generate a slack message for this run.`
+    `\n\nImporting ${added.size} issues from the project but will not generate output for this run.`
   );
   await writeSummary();
 }
