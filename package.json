@@ -5,7 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "prettier --check src/**/*.ts tests/**/*.ts",
+    "lint:fix": "prettier --write src/**/*.ts tests/**/*.ts",
     "build": "ncc build src/index.ts --out ./dist",
     "dev": "node --loader ts-node/esm src/index.ts"
   },
@@ -22,11 +26,14 @@
   },
   "devDependencies": {
     "@octokit/types": "^14.1.0",
+    "@types/jest": "^30.0.0",
     "@types/lodash": "^4.14.188",
     "@types/node": "^24.0.13",
     "@vercel/ncc": "^0.38.3",
     "dotenv": "^17.2.0",
+    "jest": "^30.0.5",
     "prettier": "^3.1.1",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

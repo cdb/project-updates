@@ -6,7 +6,10 @@
       "Bash(npm run build:*)",
       "Bash(git push:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm run lint)",
+      "Bash(npx prettier:*)"
     ],
     "deny": []
   }

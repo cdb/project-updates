@@ -5,7 +5,7 @@ import { debug } from './helpers.js';
 import comparator from './comparator.js';
 import summary from './summary.js';
 
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     let isFirstRun = false;
     let { items: oldItems, sha, error, metadata } = await api.getOldItems();
