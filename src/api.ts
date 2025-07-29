@@ -23,6 +23,9 @@ const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
 const branchName = core.getInput('branch') || '';
 
+// Version for metadata schema - could be injected during build based on git SHA
+const METADATA_VERSION = process.env.BUILD_VERSION || "2.0";
+
 interface DataWithMetadata {
   _metadata: {
     version: string;
@@ -49,7 +52,7 @@ function migrateToNewFormat(data: any): DataWithMetadata {
   debug('Migrating old format data to new format');
   return {
     _metadata: {
-      version: "2.0",
+      version: METADATA_VERSION,
       lastUpdate: null,
       runId: null,
       previousUpdate: null
@@ -189,7 +192,7 @@ async function saveItems(items, sha, previousMetadata?: DataWithMetadata['_metad
     
     const newData: DataWithMetadata = {
       _metadata: {
-        version: "2.0",
+        version: METADATA_VERSION,
         lastUpdate: now.toISOString(),
         runId: runId,
         previousUpdate: previousMetadata?.lastUpdate || null
