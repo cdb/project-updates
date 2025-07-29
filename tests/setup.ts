@@ -2,25 +2,22 @@
 import { jest } from '@jest/globals';
 
 // Mock @actions/core module
+const mockSummary = {
+  addRaw: jest.fn(),
+  stringify: jest.fn(() => 'mock summary'),
+  write: jest.fn()
+};
+
 jest.mock('@actions/core', () => ({
   getInput: jest.fn(),
   setOutput: jest.fn(),
   setFailed: jest.fn(),
   error: jest.fn(),
-  summary: {
-    addRaw: jest.fn(),
-    stringify: jest.fn(() => 'mock summary'),
-    write: jest.fn()
-  }
+  debug: jest.fn(),
+  summary: mockSummary
 }));
 
-// Mock node-fetch
-jest.mock('node-fetch', () => ({
-  __esModule: true,
-  default: jest.fn()
-}));
-
-// Mock GitHub API
+// Mock @octokit/rest
 jest.mock('@octokit/rest', () => ({
   Octokit: jest.fn(() => ({
     rest: {
@@ -40,4 +37,10 @@ jest.mock('github-project', () => ({
       list: jest.fn()
     }
   }))
+}));
+
+// Mock node-fetch
+jest.mock('node-fetch', () => ({
+  __esModule: true,
+  default: jest.fn()
 }));
