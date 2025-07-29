@@ -6,7 +6,8 @@
       "Bash(npm run build:*)",
       "Bash(git push:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }
