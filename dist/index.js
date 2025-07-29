@@ -59592,7 +59592,8 @@ async function outputDiff({ added, removed, changed, closed }, metadata) {
     if (workStarted.length > 0) {
         core.summary.addRaw('🚀 **Work Started**\n');
         workStarted.forEach((item) => {
-            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
+            const context = buildContextualMessage(item);
+            core.summary.addRaw(`- [${item.title}](${item.url})${context ? ` - ${context}` : ''}\n`);
         });
         core.summary.addRaw('\n');
     }
