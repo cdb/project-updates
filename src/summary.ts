@@ -114,22 +114,40 @@ function groupChangesByPerson(changes) {
   return byPerson;
 }
 
-function addCadenceInsights(added, changed, closed) {
+function formatTimeAgo(hours: number): string {
+  if (hours < 1) {
+    const minutes = Math.round(hours * 60);
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  } else if (hours < 24) {
+    const roundedHours = Math.round(hours * 10) / 10; // Round to 1 decimal
+    return `${roundedHours} hour${roundedHours !== 1 ? 's' : ''} ago`;
+  } else {
+    const days = Math.round(hours / 24 * 10) / 10; // Round to 1 decimal
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+}
+
+function addCadenceInsights(added, changed, closed, metadata?: any) {
   const totalMovement = added.length + changed.length + closed.length;
   const completedCount = closed.length + changed.filter(c => 
     c.status && (c.status.next === 'Done' || c.status.next === 'Completed')
   ).length;
   
+  // Time-aware messaging
+  const timeContext = metadata?.timeSincePrevious 
+    ? ` since last update (${formatTimeAgo(metadata.timeSincePrevious)})`
+    : '';
+  
   if (totalMovement >= 3) {
-    summary.addRaw(`📈 **${totalMovement} items moved forward today**\n\n`);
+    summary.addRaw(`📈 **${totalMovement} items moved forward${timeContext}**\n\n`);
   }
   
   if (completedCount >= 2) {
-    summary.addRaw(`🎉 **${completedCount} items completed**\n\n`);
+    summary.addRaw(`🎉 **${completedCount} items completed${timeContext}**\n\n`);
   }
 }
 
-async function outputDiff({ added, removed, changed, closed }) {
+async function outputDiff({ added, removed, changed, closed }, metadata?: any) {
   const hasChanges = added.length + removed.length + changed.length + closed.length > 0;
   
   if (!hasChanges) {
@@ -141,7 +159,7 @@ async function outputDiff({ added, removed, changed, closed }) {
   }
 
   // Add cadence insights at the top
-  addCadenceInsights(added, changed, closed);
+  addCadenceInsights(added, changed, closed, metadata);
 
   // Group work started items
   const workStarted = changed.filter(item => 

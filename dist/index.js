@@ -59204,8 +59204,27 @@ const committerEmail = core.getInput('committer_email');
 const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
 const branchName = core.getInput('branch') || '';
+function migrateToNewFormat(data) {
+    // Check if it's already new format
+    if (data._metadata && data.items) {
+        return data;
+    }
+    // It's old format - migrate it
+    debug('Migrating old format data to new format');
+    return {
+        _metadata: {
+            version: "2.0",
+            lastUpdate: null,
+            runId: null,
+            previousUpdate: null,
+            timeSincePrevious: null
+        },
+        items: data
+    };
+}
 async function getOldItems() {
     let items = {};
+    let metadata = undefined;
     let sha = undefined;
     try {
         const contentOptions = {
@@ -59219,7 +59238,10 @@ async function getOldItems() {
         }
         let { data } = await storageOctokit.rest.repos.getContent(contentOptions);
         if (data.content != 'undefined') {
-            items = JSON.parse(Buffer.from(data.content, 'base64').toString());
+            const rawData = JSON.parse(Buffer.from(data.content, 'base64').toString());
+            const migratedData = migrateToNewFormat(rawData);
+            items = migratedData.items;
+            metadata = migratedData._metadata;
         }
         sha = data.sha;
     }
@@ -59229,7 +59251,7 @@ async function getOldItems() {
         }
         return { items: [], sha: '', error: err };
     }
-    return { items, sha };
+    return { items, sha, metadata };
 }
 async function getNewItems() {
     try {
@@ -59299,14 +59321,28 @@ async function getNewItems() {
         return {};
     }
 }
-async function saveItems(items, sha) {
+async function saveItems(items, sha, previousMetadata) {
     try {
+        const now = new Date();
+        const runId = now.toISOString().replace(/[:.]/g, '').slice(0, 15); // 20250729T153000
+        const newData = {
+            _metadata: {
+                version: "2.0",
+                lastUpdate: now.toISOString(),
+                runId: runId,
+                previousUpdate: previousMetadata?.lastUpdate || null,
+                timeSincePrevious: previousMetadata?.lastUpdate
+                    ? (now.getTime() - new Date(previousMetadata.lastUpdate).getTime()) / (1000 * 60 * 60) // hours
+                    : null
+            },
+            items: items
+        };
         const commitOptions = {
             owner: storageOwner,
             repo: storageRepo,
             path: storagePath,
-            message: 'update', // TODO: Better message would be useful
-            content: Buffer.from(JSON.stringify(items, null, 2)).toString('base64'),
+            message: `Project update ${runId}`,
+            content: Buffer.from(JSON.stringify(newData, null, 2)).toString('base64'),
             sha,
             committer: {
                 name: committerName,
@@ -59315,15 +59351,13 @@ async function saveItems(items, sha) {
         };
         // Only add the branch property if a branch name is specified
         if (branchName && branchName.trim() !== '') {
-            // Add debug to verify branch name
             debug(`Using branch: "${branchName}" for commit`);
             commitOptions.branch = branchName;
         }
         else {
             debug('No branch specified, using default branch');
         }
-        // Debug the final commit options
-        debug('Commit options:', JSON.stringify(commitOptions));
+        debug('Saving with metadata:', newData._metadata);
         await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
     }
     catch (err) {
@@ -59514,17 +59548,35 @@ function groupChangesByPerson(changes) {
     });
     return byPerson;
 }
-function addCadenceInsights(added, changed, closed) {
-    const totalMovement = added.length + changed.length + closed.length;
-    const completedCount = closed.length + changed.filter(c => c.status && (c.status.next === 'Done' || c.status.next === 'Completed')).length;
-    if (totalMovement >= 3) {
-        core.summary.addRaw(`📈 **${totalMovement} items moved forward today**\n\n`);
+function formatTimeAgo(hours) {
+    if (hours < 1) {
+        const minutes = Math.round(hours * 60);
+        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
     }
-    if (completedCount >= 2) {
-        core.summary.addRaw(`🎉 **${completedCount} items completed**\n\n`);
+    else if (hours < 24) {
+        const roundedHours = Math.round(hours * 10) / 10; // Round to 1 decimal
+        return `${roundedHours} hour${roundedHours !== 1 ? 's' : ''} ago`;
+    }
+    else {
+        const days = Math.round(hours / 24 * 10) / 10; // Round to 1 decimal
+        return `${days} day${days !== 1 ? 's' : ''} ago`;
     }
 }
-async function outputDiff({ added, removed, changed, closed }) {
+function addCadenceInsights(added, changed, closed, metadata) {
+    const totalMovement = added.length + changed.length + closed.length;
+    const completedCount = closed.length + changed.filter(c => c.status && (c.status.next === 'Done' || c.status.next === 'Completed')).length;
+    // Time-aware messaging
+    const timeContext = metadata?.timeSincePrevious
+        ? ` since last update (${formatTimeAgo(metadata.timeSincePrevious)})`
+        : '';
+    if (totalMovement >= 3) {
+        core.summary.addRaw(`📈 **${totalMovement} items moved forward${timeContext}**\n\n`);
+    }
+    if (completedCount >= 2) {
+        core.summary.addRaw(`🎉 **${completedCount} items completed${timeContext}**\n\n`);
+    }
+}
+async function outputDiff({ added, removed, changed, closed }, metadata) {
     const hasChanges = added.length + removed.length + changed.length + closed.length > 0;
     if (!hasChanges) {
         core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
@@ -59532,7 +59584,7 @@ async function outputDiff({ added, removed, changed, closed }) {
         return cleanMessage(core.summary.stringify());
     }
     // Add cadence insights at the top
-    addCadenceInsights(added, changed, closed);
+    addCadenceInsights(added, changed, closed, metadata);
     // Group work started items
     const workStarted = changed.filter(item => item.status && (item.status.next === 'In Progress' || item.status.next === 'Active'));
     if (workStarted.length > 0) {
@@ -59606,7 +59658,7 @@ async function writeSummary() {
 async function run() {
     try {
         let isFirstRun = false;
-        let { items: oldItems, sha, error } = await api.getOldItems();
+        let { items: oldItems, sha, error, metadata } = await api.getOldItems();
         if (error) {
             debug('error', error);
             if (error.status === 404) {
@@ -59619,7 +59671,7 @@ async function run() {
         }
         let newItems = await api.getNewItems();
         debug('newItems:', newItems);
-        await api.saveItems(newItems, sha);
+        await api.saveItems(newItems, sha, metadata);
         let diff = comparator.diff(oldItems, newItems);
         // Send a simple summary and return
         if (isFirstRun) {
@@ -59628,7 +59680,7 @@ async function run() {
         }
         // It's not the first run, lets diff it, and send real summaries
         outputs.diff(diff);
-        const msg = await summary.outputDiff(diff);
+        const msg = await summary.outputDiff(diff, metadata);
         (0,core.setOutput)('updates', msg);
     }
     catch (error) {
