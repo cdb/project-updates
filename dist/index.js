@@ -59210,7 +59210,7 @@ const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
 const branchName = core.getInput('branch') || '';
 // Version for metadata schema - could be injected during build based on git SHA
-const METADATA_VERSION = process.env.BUILD_VERSION || "2.0";
+const METADATA_VERSION = process.env.BUILD_VERSION || '2.0';
 function migrateToNewFormat(data) {
     // Check if it's already new format
     if (data._metadata && data.items) {
@@ -59497,8 +59497,9 @@ function buildContextualMessage(item) {
         }
     }
     if (item.labels_added) {
-        const priorityLabels = item.labels_added.filter(l => l.toLowerCase().includes('priority') || l.toLowerCase().includes('urgent'));
-        const otherLabels = item.labels_added.filter(l => !priorityLabels.includes(l));
+        const priorityLabels = item.labels_added.filter((l) => l.toLowerCase().includes('priority') ||
+            l.toLowerCase().includes('urgent'));
+        const otherLabels = item.labels_added.filter((l) => !priorityLabels.includes(l));
         if (priorityLabels.length > 0) {
             messages.push(`🔥 Marked as ${priorityLabels.join(', ')}`);
         }
@@ -59542,13 +59543,14 @@ function formatTimeAgo(hours) {
         return `${roundedHours} hour${roundedHours !== 1 ? 's' : ''} ago`;
     }
     else {
-        const days = Math.round(hours / 24 * 10) / 10; // Round to 1 decimal
+        const days = Math.round((hours / 24) * 10) / 10; // Round to 1 decimal
         return `${days} day${days !== 1 ? 's' : ''} ago`;
     }
 }
 function addCadenceInsights(added, changed, closed, metadata) {
     const totalMovement = added.length + changed.length + closed.length;
-    const completedCount = closed.length + changed.filter(c => c.status && (c.status.next === 'Done' || c.status.next === 'Completed')).length;
+    const completedCount = closed.length +
+        changed.filter((c) => c.status && (c.status.next === 'Done' || c.status.next === 'Completed')).length;
     // Calculate time difference from timestamps
     let timeContext = '';
     if (metadata?.lastUpdate && metadata?.previousUpdate) {
@@ -59574,7 +59576,8 @@ async function outputDiff({ added, removed, changed, closed }, metadata) {
     // Add cadence insights at the top
     addCadenceInsights(added, changed, closed, metadata);
     // Group work started items
-    const workStarted = changed.filter(item => item.status && (item.status.next === 'In Progress' || item.status.next === 'Active'));
+    const workStarted = changed.filter((item) => item.status &&
+        (item.status.next === 'In Progress' || item.status.next === 'Active'));
     if (workStarted.length > 0) {
         core.summary.addRaw('🚀 **Work Started**\n');
         workStarted.forEach((item) => {
@@ -59585,7 +59588,8 @@ async function outputDiff({ added, removed, changed, closed }, metadata) {
     }
     // Group completed items (both closed and status completed)
     const completedItems = [...closed];
-    const statusCompleted = changed.filter(item => item.status && (item.status.next === 'Done' || item.status.next === 'Completed'));
+    const statusCompleted = changed.filter((item) => item.status &&
+        (item.status.next === 'Done' || item.status.next === 'Completed'));
     completedItems.push(...statusCompleted);
     if (completedItems.length > 0) {
         core.summary.addRaw('✅ **Completed**\n');
@@ -59603,8 +59607,10 @@ async function outputDiff({ added, removed, changed, closed }, metadata) {
         core.summary.addRaw('\n');
     }
     // Group other updates
-    const otherUpdates = changed.filter(item => !(item.status && (item.status.next === 'In Progress' || item.status.next === 'Active')) &&
-        !(item.status && (item.status.next === 'Done' || item.status.next === 'Completed')));
+    const otherUpdates = changed.filter((item) => !(item.status &&
+        (item.status.next === 'In Progress' || item.status.next === 'Active')) &&
+        !(item.status &&
+            (item.status.next === 'Done' || item.status.next === 'Completed')));
     if (otherUpdates.length > 0) {
         core.summary.addRaw('🔄 **Other Updates**\n');
         otherUpdates.forEach((item) => {
