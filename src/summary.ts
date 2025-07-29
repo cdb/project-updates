@@ -93,26 +93,6 @@ async function outputFirstRun(added: NewItemsMap) {
   await writeSummary();
 }
 
-function groupChangesByPerson(changes) {
-  const byPerson = {};
-  
-  changes.forEach((item) => {
-    if (item.assignees_added) {
-      item.assignees_added.forEach(assignee => {
-        if (!byPerson[assignee]) byPerson[assignee] = [];
-        byPerson[assignee].push({ ...item, changeType: 'picked_up' });
-      });
-    }
-    
-    // If no specific assignee changes, group under "Team Updates"
-    if (!item.assignees_added && !item.assignees_removed) {
-      if (!byPerson['Team Updates']) byPerson['Team Updates'] = [];
-      byPerson['Team Updates'].push(item);
-    }
-  });
-  
-  return byPerson;
-}
 
 function formatTimeAgo(hours: number): string {
   if (hours < 1) {
