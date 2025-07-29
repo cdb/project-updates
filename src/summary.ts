@@ -133,10 +133,14 @@ function addCadenceInsights(added, changed, closed, metadata?: any) {
     c.status && (c.status.next === 'Done' || c.status.next === 'Completed')
   ).length;
   
-  // Time-aware messaging
-  const timeContext = metadata?.timeSincePrevious 
-    ? ` since last update (${formatTimeAgo(metadata.timeSincePrevious)})`
-    : '';
+  // Calculate time difference from timestamps
+  let timeContext = '';
+  if (metadata?.lastUpdate && metadata?.previousUpdate) {
+    const currentTime = new Date(metadata.lastUpdate);
+    const previousTime = new Date(metadata.previousUpdate);
+    const hoursDiff = (currentTime.getTime() - previousTime.getTime()) / (1000 * 60 * 60);
+    timeContext = ` since last update (${formatTimeAgo(hoursDiff)})`;
+  }
   
   if (totalMovement >= 3) {
     summary.addRaw(`📈 **${totalMovement} items moved forward${timeContext}**\n\n`);

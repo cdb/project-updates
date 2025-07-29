@@ -29,7 +29,6 @@ interface DataWithMetadata {
     lastUpdate: string | null;
     runId: string | null;
     previousUpdate: string | null;
-    timeSincePrevious: number | null;
   };
   items: any;
 }
@@ -53,8 +52,7 @@ function migrateToNewFormat(data: any): DataWithMetadata {
       version: "2.0",
       lastUpdate: null,
       runId: null,
-      previousUpdate: null,
-      timeSincePrevious: null
+      previousUpdate: null
     },
     items: data
   };
@@ -194,10 +192,7 @@ async function saveItems(items, sha, previousMetadata?: DataWithMetadata['_metad
         version: "2.0",
         lastUpdate: now.toISOString(),
         runId: runId,
-        previousUpdate: previousMetadata?.lastUpdate || null,
-        timeSincePrevious: previousMetadata?.lastUpdate 
-          ? (now.getTime() - new Date(previousMetadata.lastUpdate).getTime()) / (1000 * 60 * 60) // hours
-          : null
+        previousUpdate: previousMetadata?.lastUpdate || null
       },
       items: items
     };
