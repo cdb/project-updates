@@ -23,13 +23,47 @@ const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
 const branchName = core.getInput('branch') || '';
 
+// Version for metadata schema - could be injected during build based on git SHA
+const METADATA_VERSION = process.env.BUILD_VERSION || "2.0";
+
+interface DataWithMetadata {
+  _metadata: {
+    version: string;
+    lastUpdate: string | null;
+    runId: string | null;
+    previousUpdate: string | null;
+  };
+  items: any;
+}
+
 interface OldItems {
   items: any;
   sha: string;
   error?: any;
+  metadata?: DataWithMetadata['_metadata'];
 }
+function migrateToNewFormat(data: any): DataWithMetadata {
+  // Check if it's already new format
+  if (data._metadata && data.items) {
+    return data as DataWithMetadata;
+  }
+  
+  // It's old format - migrate it
+  debug('Migrating old format data to new format');
+  return {
+    _metadata: {
+      version: METADATA_VERSION,
+      lastUpdate: null,
+      runId: null,
+      previousUpdate: null
+    },
+    items: data
+  };
+}
+
 async function getOldItems(): Promise<OldItems> {
   let items = {};
+  let metadata = undefined;
   let sha = undefined;
   try {
     const contentOptions: any = {
@@ -45,7 +79,10 @@ async function getOldItems(): Promise<OldItems> {
 
     let { data }: { data: any } = await storageOctokit.rest.repos.getContent(contentOptions);
     if (data.content != 'undefined') {
-      items = JSON.parse(Buffer.from(data.content, 'base64').toString());
+      const rawData = JSON.parse(Buffer.from(data.content, 'base64').toString());
+      const migratedData = migrateToNewFormat(rawData);
+      items = migratedData.items;
+      metadata = migratedData._metadata;
     }
     sha = data.sha;
   } catch (err) {
@@ -54,7 +91,7 @@ async function getOldItems(): Promise<OldItems> {
     }
     return { items: [], sha: '', error: err };
   }
-  return { items, sha };
+  return { items, sha, metadata };
 }
 
 export interface NewItemsMap {
@@ -148,14 +185,27 @@ async function getNewItems(): Promise<NewItemsMap> {
   }
 }
 
-async function saveItems(items, sha) {
+async function saveItems(items, sha, previousMetadata?: DataWithMetadata['_metadata']) {
   try {
+    const now = new Date();
+    const runId = now.toISOString().replace(/[:.]/g, '').slice(0, 15); // 20250729T153000
+    
+    const newData: DataWithMetadata = {
+      _metadata: {
+        version: METADATA_VERSION,
+        lastUpdate: now.toISOString(),
+        runId: runId,
+        previousUpdate: previousMetadata?.lastUpdate || null
+      },
+      items: items
+    };
+
     const commitOptions: any = {
       owner: storageOwner,
       repo: storageRepo,
       path: storagePath,
-      message: 'update', // TODO: Better message would be useful
-      content: Buffer.from(JSON.stringify(items, null, 2)).toString('base64'),
+      message: `Project update ${runId}`,
+      content: Buffer.from(JSON.stringify(newData, null, 2)).toString('base64'),
       sha,
       committer: {
         name: committerName,
@@ -165,15 +215,13 @@ async function saveItems(items, sha) {
     
     // Only add the branch property if a branch name is specified
     if (branchName && branchName.trim() !== '') {
-      // Add debug to verify branch name
       debug(`Using branch: "${branchName}" for commit`);
       commitOptions.branch = branchName;
     } else {
       debug('No branch specified, using default branch');
     }
 
-    // Debug the final commit options
-    debug('Commit options:', JSON.stringify(commitOptions));
+    debug('Saving with metadata:', newData._metadata);
     
     await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
   } catch (err) {

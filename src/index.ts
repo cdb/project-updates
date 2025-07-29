@@ -8,7 +8,7 @@ import summary from './summary.js';
 async function run(): Promise<void> {
   try {
     let isFirstRun = false;
-    let { items: oldItems, sha, error } = await api.getOldItems();
+    let { items: oldItems, sha, error, metadata } = await api.getOldItems();
     if (error) {
       debug('error', error);
       if (error.status === 404) {
@@ -22,7 +22,7 @@ async function run(): Promise<void> {
     let newItems = await api.getNewItems();
     debug('newItems:', newItems);
 
-    await api.saveItems(newItems, sha);
+    await api.saveItems(newItems, sha, metadata);
     let diff = comparator.diff(oldItems, newItems);
 
     // Send a simple summary and return
@@ -33,7 +33,7 @@ async function run(): Promise<void> {
 
     // It's not the first run, lets diff it, and send real summaries
     outputs.diff(diff);
-    const msg = await summary.outputDiff(diff);
+    const msg = await summary.outputDiff(diff, metadata);
     setOutput('updates', msg);
   } catch (error) {
     setFailed(error.message);

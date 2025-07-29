@@ -59204,8 +59204,28 @@ const committerEmail = core.getInput('committer_email');
 const customFields = core.getInput('custom_fields');
 const filterString = core.getInput('filter');
 const branchName = core.getInput('branch') || '';
+// Version for metadata schema - could be injected during build based on git SHA
+const METADATA_VERSION = process.env.BUILD_VERSION || "2.0";
+function migrateToNewFormat(data) {
+    // Check if it's already new format
+    if (data._metadata && data.items) {
+        return data;
+    }
+    // It's old format - migrate it
+    debug('Migrating old format data to new format');
+    return {
+        _metadata: {
+            version: METADATA_VERSION,
+            lastUpdate: null,
+            runId: null,
+            previousUpdate: null
+        },
+        items: data
+    };
+}
 async function getOldItems() {
     let items = {};
+    let metadata = undefined;
     let sha = undefined;
     try {
         const contentOptions = {
@@ -59219,7 +59239,10 @@ async function getOldItems() {
         }
         let { data } = await storageOctokit.rest.repos.getContent(contentOptions);
         if (data.content != 'undefined') {
-            items = JSON.parse(Buffer.from(data.content, 'base64').toString());
+            const rawData = JSON.parse(Buffer.from(data.content, 'base64').toString());
+            const migratedData = migrateToNewFormat(rawData);
+            items = migratedData.items;
+            metadata = migratedData._metadata;
         }
         sha = data.sha;
     }
@@ -59229,7 +59252,7 @@ async function getOldItems() {
         }
         return { items: [], sha: '', error: err };
     }
-    return { items, sha };
+    return { items, sha, metadata };
 }
 async function getNewItems() {
     try {
@@ -59299,14 +59322,25 @@ async function getNewItems() {
         return {};
     }
 }
-async function saveItems(items, sha) {
+async function saveItems(items, sha, previousMetadata) {
     try {
+        const now = new Date();
+        const runId = now.toISOString().replace(/[:.]/g, '').slice(0, 15); // 20250729T153000
+        const newData = {
+            _metadata: {
+                version: METADATA_VERSION,
+                lastUpdate: now.toISOString(),
+                runId: runId,
+                previousUpdate: previousMetadata?.lastUpdate || null
+            },
+            items: items
+        };
         const commitOptions = {
             owner: storageOwner,
             repo: storageRepo,
             path: storagePath,
-            message: 'update', // TODO: Better message would be useful
-            content: Buffer.from(JSON.stringify(items, null, 2)).toString('base64'),
+            message: `Project update ${runId}`,
+            content: Buffer.from(JSON.stringify(newData, null, 2)).toString('base64'),
             sha,
             committer: {
                 name: committerName,
@@ -59315,15 +59349,13 @@ async function saveItems(items, sha) {
         };
         // Only add the branch property if a branch name is specified
         if (branchName && branchName.trim() !== '') {
-            // Add debug to verify branch name
             debug(`Using branch: "${branchName}" for commit`);
             commitOptions.branch = branchName;
         }
         else {
             debug('No branch specified, using default branch');
         }
-        // Debug the final commit options
-        debug('Commit options:', JSON.stringify(commitOptions));
+        debug('Saving with metadata:', newData._metadata);
         await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
     }
     catch (err) {
@@ -59421,71 +59453,168 @@ function cleanMessage(msg) {
     out = out.replaceAll(headingFinderRegex, '*$1*');
     return out;
 }
-function buildChangeSummary(item) {
-    // TODO: Probably better ways to describe each change type
-    let summaries = [];
+function getStatusEmoji(fromStatus, toStatus) {
+    if (toStatus === 'Done' || toStatus === 'Completed')
+        return '✅';
+    if (toStatus === 'In Progress' || toStatus === 'Active')
+        return '🚀';
+    if (toStatus === 'Blocked' || toStatus === 'On Hold')
+        return '🚧';
+    if (toStatus === 'Review' || toStatus === 'Testing')
+        return '👀';
+    if (toStatus === 'Todo' || toStatus === 'Backlog')
+        return '📋';
+    return '🔄';
+}
+function buildContextualMessage(item) {
+    let messages = [];
     if (item.previous_title) {
-        summaries.push(`Previous title: ${item.previous_title}`);
+        messages.push(`📝 Renamed from "${item.previous_title}"`);
     }
     if (item.status) {
-        const extra = item.status.next == 'Done' ? ' :tada:' : '';
-        summaries.push(`Status: \`${item.status.prev}\` -> \`${item.status.next}\`${extra}`);
+        const emoji = getStatusEmoji(item.status.prev, item.status.next);
+        const fromStatus = item.status.prev;
+        const toStatus = item.status.next;
+        if (toStatus === 'Done' || toStatus === 'Completed') {
+            messages.push(`${emoji} Completed`);
+        }
+        else if (toStatus === 'In Progress' || toStatus === 'Active') {
+            messages.push(`${emoji} Work started`);
+        }
+        else if (toStatus === 'Blocked' || toStatus === 'On Hold') {
+            messages.push(`${emoji} Now blocked`);
+        }
+        else if (toStatus === 'Review' || toStatus === 'Testing') {
+            messages.push(`${emoji} Ready for review`);
+        }
+        else {
+            messages.push(`${emoji} Moved to ${toStatus}`);
+        }
     }
     if (item.labels_added) {
-        summaries.push(`Added labels: ${item.labels_added.map((l) => `\`${l}\``).join(', ')}`);
+        const priorityLabels = item.labels_added.filter(l => l.toLowerCase().includes('priority') || l.toLowerCase().includes('urgent'));
+        const otherLabels = item.labels_added.filter(l => !priorityLabels.includes(l));
+        if (priorityLabels.length > 0) {
+            messages.push(`🔥 Marked as ${priorityLabels.join(', ')}`);
+        }
+        if (otherLabels.length > 0) {
+            messages.push(`🏷️ Tagged: ${otherLabels.join(', ')}`);
+        }
     }
     if (item.labels_removed) {
-        summaries.push(`Removed labels: ${item.labels_removed.map((l) => `\`${l}\``).join(', ')}`);
+        messages.push(`🏷️ Removed tags: ${item.labels_removed.join(', ')}`);
     }
     if (item.assignees_added) {
-        summaries.push(`Assigned to: ${item.assignees_added.map((l) => `\`${l}\``).join(', ')}`);
+        const assigneeList = item.assignees_added.join(', ');
+        messages.push(`👨‍💻 ${assigneeList} picked this up`);
     }
     if (item.assignees_removed) {
-        summaries.push(`Removed assignees: ${item.assignees_removed
-            .map((l) => `\`${l}\``)
-            .join(', ')}`);
+        messages.push(`👋 Unassigned from ${item.assignees_removed.join(', ')}`);
     }
     if (item.closed) {
-        const extra = item.closed.next ? ':partying_face:' : '';
-        summaries.push(`Closed: \`${item.closed.prev}\` -> \`${item.closed.next}\`${extra}`);
+        const emoji = item.closed.next ? '🎉' : '📤';
+        messages.push(item.closed.next ? `${emoji} Closed and completed` : `${emoji} Reopened`);
     }
     if (item.merged) {
-        const extra = item.merged.next ? ':partying_face:' : '';
-        summaries.push(`Merged: \`${item.merged.prev}\` -> \`${item.merged.next}\`${extra}`);
+        const emoji = item.merged.next ? '🎉' : '🔄';
+        messages.push(item.merged.next ? `${emoji} Merged` : `${emoji} Unmerged`);
     }
-    debug('summaries', summaries);
-    return summaries.join('. ');
+    debug('contextual messages', messages);
+    return messages.join(' • ');
 }
 async function outputFirstRun(added) {
     core.summary.addRaw('\n## :information_source: First Run Detected');
     core.summary.addRaw(`\n\nImporting ${added.size} issues from the project but will not generate output for this run.`);
     await writeSummary();
 }
-async function outputDiff({ added, removed, changed, closed }) {
+function formatTimeAgo(hours) {
+    if (hours < 1) {
+        const minutes = Math.round(hours * 60);
+        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    }
+    else if (hours < 24) {
+        const roundedHours = Math.round(hours * 10) / 10; // Round to 1 decimal
+        return `${roundedHours} hour${roundedHours !== 1 ? 's' : ''} ago`;
+    }
+    else {
+        const days = Math.round(hours / 24 * 10) / 10; // Round to 1 decimal
+        return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+}
+function addCadenceInsights(added, changed, closed, metadata) {
+    const totalMovement = added.length + changed.length + closed.length;
+    const completedCount = closed.length + changed.filter(c => c.status && (c.status.next === 'Done' || c.status.next === 'Completed')).length;
+    // Calculate time difference from timestamps
+    let timeContext = '';
+    if (metadata?.lastUpdate && metadata?.previousUpdate) {
+        const currentTime = new Date(metadata.lastUpdate);
+        const previousTime = new Date(metadata.previousUpdate);
+        const hoursDiff = (currentTime.getTime() - previousTime.getTime()) / (1000 * 60 * 60);
+        timeContext = ` since last update (${formatTimeAgo(hoursDiff)})`;
+    }
+    if (totalMovement >= 3) {
+        core.summary.addRaw(`📈 **${totalMovement} items moved forward${timeContext}**\n\n`);
+    }
+    if (completedCount >= 2) {
+        core.summary.addRaw(`🎉 **${completedCount} items completed${timeContext}**\n\n`);
+    }
+}
+async function outputDiff({ added, removed, changed, closed }, metadata) {
+    const hasChanges = added.length + removed.length + changed.length + closed.length > 0;
+    if (!hasChanges) {
+        core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
+        await writeSummary();
+        return cleanMessage(core.summary.stringify());
+    }
+    // Add cadence insights at the top
+    addCadenceInsights(added, changed, closed, metadata);
+    // Group work started items
+    const workStarted = changed.filter(item => item.status && (item.status.next === 'In Progress' || item.status.next === 'Active'));
+    if (workStarted.length > 0) {
+        core.summary.addRaw('🚀 **Work Started**\n');
+        workStarted.forEach((item) => {
+            const context = buildContextualMessage(item);
+            core.summary.addRaw(`- [${item.title}](${item.url})${context ? ` - ${context}` : ''}\n`);
+        });
+        core.summary.addRaw('\n');
+    }
+    // Group completed items (both closed and status completed)
+    const completedItems = [...closed];
+    const statusCompleted = changed.filter(item => item.status && (item.status.next === 'Done' || item.status.next === 'Completed'));
+    completedItems.push(...statusCompleted);
+    if (completedItems.length > 0) {
+        core.summary.addRaw('✅ **Completed**\n');
+        completedItems.forEach((item) => {
+            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
+        });
+        core.summary.addRaw('\n');
+    }
+    // Group new items
     if (added.length > 0) {
+        core.summary.addRaw('➕ **Added to Board**\n');
         added.forEach((item) => {
-            core.summary.addRaw(`- :heavy_plus_sign: [${item.title}](${item.url}) was added to the board\n`);
+            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
         });
+        core.summary.addRaw('\n');
     }
-    if (changed.length > 0) {
-        changed.forEach((item) => {
-            core.summary.addRaw(`- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`);
+    // Group other updates
+    const otherUpdates = changed.filter(item => !(item.status && (item.status.next === 'In Progress' || item.status.next === 'Active')) &&
+        !(item.status && (item.status.next === 'Done' || item.status.next === 'Completed')));
+    if (otherUpdates.length > 0) {
+        core.summary.addRaw('🔄 **Other Updates**\n');
+        otherUpdates.forEach((item) => {
+            core.summary.addRaw(`- [${item.title}](${item.url}) - ${buildContextualMessage(item)}\n`);
         });
+        core.summary.addRaw('\n');
     }
-    if (closed.length > 0) {
-        closed.forEach((item) => {
-            core.summary.addRaw(`- :tada: [${item.title}](${item.url}) was closed!\n`);
-        });
-    }
+    // Group removed items
     if (removed.length > 0) {
+        core.summary.addRaw('❌ **Removed from Board**\n');
         removed.forEach((item) => {
-            core.summary.addRaw(`- :no_entry_sign: [${item.title}](${item.url}) was removed from the board\n`);
+            core.summary.addRaw(`- [${item.title}](${item.url})\n`);
         });
     }
     const summaryWithoutNull = core.summary.stringify();
-    if (added.length + removed.length + changed.length === 0) {
-        core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
-    }
     await writeSummary();
     return cleanMessage(summaryWithoutNull);
 }
@@ -59513,7 +59642,7 @@ async function writeSummary() {
 async function run() {
     try {
         let isFirstRun = false;
-        let { items: oldItems, sha, error } = await api.getOldItems();
+        let { items: oldItems, sha, error, metadata } = await api.getOldItems();
         if (error) {
             debug('error', error);
             if (error.status === 404) {
@@ -59526,7 +59655,7 @@ async function run() {
         }
         let newItems = await api.getNewItems();
         debug('newItems:', newItems);
-        await api.saveItems(newItems, sha);
+        await api.saveItems(newItems, sha, metadata);
         let diff = comparator.diff(oldItems, newItems);
         // Send a simple summary and return
         if (isFirstRun) {
@@ -59535,7 +59664,7 @@ async function run() {
         }
         // It's not the first run, lets diff it, and send real summaries
         outputs.diff(diff);
-        const msg = await summary.outputDiff(diff);
+        const msg = await summary.outputDiff(diff, metadata);
         (0,core.setOutput)('updates', msg);
     }
     catch (error) {

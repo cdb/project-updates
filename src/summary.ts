@@ -12,54 +12,77 @@ function cleanMessage(msg: string): string {
   return out;
 }
 
-function buildChangeSummary(item) {
-  // TODO: Probably better ways to describe each change type
-  let summaries = [];
+function getStatusEmoji(fromStatus: string, toStatus: string): string {
+  if (toStatus === 'Done' || toStatus === 'Completed') return '✅';
+  if (toStatus === 'In Progress' || toStatus === 'Active') return '🚀';
+  if (toStatus === 'Blocked' || toStatus === 'On Hold') return '🚧';
+  if (toStatus === 'Review' || toStatus === 'Testing') return '👀';
+  if (toStatus === 'Todo' || toStatus === 'Backlog') return '📋';
+  return '🔄';
+}
+
+function buildContextualMessage(item) {
+  let messages = [];
+  
   if (item.previous_title) {
-    summaries.push(`Previous title: ${item.previous_title}`);
+    messages.push(`📝 Renamed from "${item.previous_title}"`);
   }
+  
   if (item.status) {
-    const extra = item.status.next == 'Done' ? ' :tada:' : '';
-    summaries.push(
-      `Status: \`${item.status.prev}\` -> \`${item.status.next}\`${extra}`
-    );
+    const emoji = getStatusEmoji(item.status.prev, item.status.next);
+    const fromStatus = item.status.prev;
+    const toStatus = item.status.next;
+    
+    if (toStatus === 'Done' || toStatus === 'Completed') {
+      messages.push(`${emoji} Completed`);
+    } else if (toStatus === 'In Progress' || toStatus === 'Active') {
+      messages.push(`${emoji} Work started`);
+    } else if (toStatus === 'Blocked' || toStatus === 'On Hold') {
+      messages.push(`${emoji} Now blocked`);
+    } else if (toStatus === 'Review' || toStatus === 'Testing') {
+      messages.push(`${emoji} Ready for review`);
+    } else {
+      messages.push(`${emoji} Moved to ${toStatus}`);
+    }
   }
+  
   if (item.labels_added) {
-    summaries.push(
-      `Added labels: ${item.labels_added.map((l) => `\`${l}\``).join(', ')}`
-    );
+    const priorityLabels = item.labels_added.filter(l => l.toLowerCase().includes('priority') || l.toLowerCase().includes('urgent'));
+    const otherLabels = item.labels_added.filter(l => !priorityLabels.includes(l));
+    
+    if (priorityLabels.length > 0) {
+      messages.push(`🔥 Marked as ${priorityLabels.join(', ')}`);
+    }
+    if (otherLabels.length > 0) {
+      messages.push(`🏷️ Tagged: ${otherLabels.join(', ')}`);
+    }
   }
+  
   if (item.labels_removed) {
-    summaries.push(
-      `Removed labels: ${item.labels_removed.map((l) => `\`${l}\``).join(', ')}`
-    );
+    messages.push(`🏷️ Removed tags: ${item.labels_removed.join(', ')}`);
   }
+  
   if (item.assignees_added) {
-    summaries.push(
-      `Assigned to: ${item.assignees_added.map((l) => `\`${l}\``).join(', ')}`
-    );
+    const assigneeList = item.assignees_added.join(', ');
+    messages.push(`👨‍💻 ${assigneeList} picked this up`);
   }
+  
   if (item.assignees_removed) {
-    summaries.push(
-      `Removed assignees: ${item.assignees_removed
-        .map((l) => `\`${l}\``)
-        .join(', ')}`
-    );
+    messages.push(`👋 Unassigned from ${item.assignees_removed.join(', ')}`);
   }
+  
   if (item.closed) {
-    const extra = item.closed.next ? ':partying_face:' : '';
-    summaries.push(
-      `Closed: \`${item.closed.prev}\` -> \`${item.closed.next}\`${extra}`
-    );
+    const emoji = item.closed.next ? '🎉' : '📤';
+    messages.push(item.closed.next ? `${emoji} Closed and completed` : `${emoji} Reopened`);
   }
+  
   if (item.merged) {
-    const extra = item.merged.next ? ':partying_face:' : '';
-    summaries.push(
-      `Merged: \`${item.merged.prev}\` -> \`${item.merged.next}\`${extra}`
-    );
+    const emoji = item.merged.next ? '🎉' : '🔄';
+    messages.push(item.merged.next ? `${emoji} Merged` : `${emoji} Unmerged`);
   }
-  debug('summaries', summaries);
-  return summaries.join('. ');
+  
+  debug('contextual messages', messages);
+  return messages.join(' • ');
 }
 
 async function outputFirstRun(added: NewItemsMap) {
@@ -70,45 +93,121 @@ async function outputFirstRun(added: NewItemsMap) {
   await writeSummary();
 }
 
-async function outputDiff({ added, removed, changed, closed }) {
+
+function formatTimeAgo(hours: number): string {
+  if (hours < 1) {
+    const minutes = Math.round(hours * 60);
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  } else if (hours < 24) {
+    const roundedHours = Math.round(hours * 10) / 10; // Round to 1 decimal
+    return `${roundedHours} hour${roundedHours !== 1 ? 's' : ''} ago`;
+  } else {
+    const days = Math.round(hours / 24 * 10) / 10; // Round to 1 decimal
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+}
+
+function addCadenceInsights(added, changed, closed, metadata?: any) {
+  const totalMovement = added.length + changed.length + closed.length;
+  const completedCount = closed.length + changed.filter(c => 
+    c.status && (c.status.next === 'Done' || c.status.next === 'Completed')
+  ).length;
+  
+  // Calculate time difference from timestamps
+  let timeContext = '';
+  if (metadata?.lastUpdate && metadata?.previousUpdate) {
+    const currentTime = new Date(metadata.lastUpdate);
+    const previousTime = new Date(metadata.previousUpdate);
+    const hoursDiff = (currentTime.getTime() - previousTime.getTime()) / (1000 * 60 * 60);
+    timeContext = ` since last update (${formatTimeAgo(hoursDiff)})`;
+  }
+  
+  if (totalMovement >= 3) {
+    summary.addRaw(`📈 **${totalMovement} items moved forward${timeContext}**\n\n`);
+  }
+  
+  if (completedCount >= 2) {
+    summary.addRaw(`🎉 **${completedCount} items completed${timeContext}**\n\n`);
+  }
+}
+
+async function outputDiff({ added, removed, changed, closed }, metadata?: any) {
+  const hasChanges = added.length + removed.length + changed.length + closed.length > 0;
+  
+  if (!hasChanges) {
+    summary.addRaw(
+      '\n## No Changes\n\nNo changes were detected in the project.'
+    );
+    await writeSummary();
+    return cleanMessage(summary.stringify());
+  }
+
+  // Add cadence insights at the top
+  addCadenceInsights(added, changed, closed, metadata);
+
+  // Group work started items
+  const workStarted = changed.filter(item => 
+    item.status && (item.status.next === 'In Progress' || item.status.next === 'Active')
+  );
+  
+  if (workStarted.length > 0) {
+    summary.addRaw('🚀 **Work Started**\n');
+    workStarted.forEach((item) => {
+      const context = buildContextualMessage(item);
+      summary.addRaw(`- [${item.title}](${item.url})${context ? ` - ${context}` : ''}\n`);
+    });
+    summary.addRaw('\n');
+  }
+
+  // Group completed items (both closed and status completed)
+  const completedItems = [...closed];
+  const statusCompleted = changed.filter(item => 
+    item.status && (item.status.next === 'Done' || item.status.next === 'Completed')
+  );
+  completedItems.push(...statusCompleted);
+  
+  if (completedItems.length > 0) {
+    summary.addRaw('✅ **Completed**\n');
+    completedItems.forEach((item) => {
+      summary.addRaw(`- [${item.title}](${item.url})\n`);
+    });
+    summary.addRaw('\n');
+  }
+
+  // Group new items
   if (added.length > 0) {
+    summary.addRaw('➕ **Added to Board**\n');
     added.forEach((item) => {
+      summary.addRaw(`- [${item.title}](${item.url})\n`);
+    });
+    summary.addRaw('\n');
+  }
+
+  // Group other updates
+  const otherUpdates = changed.filter(item => 
+    !(item.status && (item.status.next === 'In Progress' || item.status.next === 'Active')) &&
+    !(item.status && (item.status.next === 'Done' || item.status.next === 'Completed'))
+  );
+  
+  if (otherUpdates.length > 0) {
+    summary.addRaw('🔄 **Other Updates**\n');
+    otherUpdates.forEach((item) => {
       summary.addRaw(
-        `- :heavy_plus_sign: [${item.title}](${item.url}) was added to the board\n`
+        `- [${item.title}](${item.url}) - ${buildContextualMessage(item)}\n`
       );
     });
+    summary.addRaw('\n');
   }
 
-  if (changed.length > 0) {
-    changed.forEach((item) => {
-      summary.addRaw(
-        `- [${item.title}](${item.url}) - ${buildChangeSummary(item)}\n`
-      );
-    });
-  }
-
-  if (closed.length > 0) {
-    closed.forEach((item) => {
-      summary.addRaw(`- :tada: [${item.title}](${item.url}) was closed!\n`);
-    });
-  }
-
+  // Group removed items
   if (removed.length > 0) {
+    summary.addRaw('❌ **Removed from Board**\n');
     removed.forEach((item) => {
-      summary.addRaw(
-        `- :no_entry_sign: [${item.title}](${item.url}) was removed from the board\n`
-      );
+      summary.addRaw(`- [${item.title}](${item.url})\n`);
     });
   }
 
   const summaryWithoutNull = summary.stringify();
-
-  if (added.length + removed.length + changed.length === 0) {
-    summary.addRaw(
-      '\n## No Changes\n\nNo changes were detected in the project.'
-    );
-  }
-
   await writeSummary();
   return cleanMessage(summaryWithoutNull);
 }
