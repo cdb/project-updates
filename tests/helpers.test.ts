@@ -15,17 +15,17 @@ describe('helpers', () => {
   describe('debug', () => {
     it('should call core.debug with formatted message', () => {
       const core = await import('@actions/core');
-      
+
       helpers.debug('test message', { key: 'value' });
-      
+
       expect(core.debug).toHaveBeenCalledWith('test message {"key":"value"}');
     });
 
     it('should handle debug without data', () => {
       const core = await import('@actions/core');
-      
+
       helpers.debug('simple message');
-      
+
       expect(core.debug).toHaveBeenCalledWith('simple message');
     });
 
@@ -38,9 +38,9 @@ describe('helpers', () => {
           null_value: null
         }
       };
-      
+
       helpers.debug('complex', complexData);
-      
+
       expect(core.debug).toHaveBeenCalledWith(
         'complex {"nested":{"array":[1,2,3],"boolean":true,"null_value":null}}'
       );
@@ -50,7 +50,7 @@ describe('helpers', () => {
       const core = await import('@actions/core');
       const circular: any = { name: 'test' };
       circular.self = circular;
-      
+
       // Should not throw an error
       expect(() => helpers.debug('circular', circular)).not.toThrow();
       expect(core.debug).toHaveBeenCalled();
@@ -58,10 +58,10 @@ describe('helpers', () => {
 
     it('should handle undefined and null data', () => {
       const core = await import('@actions/core');
-      
+
       helpers.debug('undefined test', undefined);
       helpers.debug('null test', null);
-      
+
       expect(core.debug).toHaveBeenCalledWith('undefined test');
       expect(core.debug).toHaveBeenCalledWith('null test null');
     });

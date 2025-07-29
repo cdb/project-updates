@@ -28,21 +28,27 @@ describe('summary', () => {
         ['item1', { title: 'Test 1' }],
         ['item2', { title: 'Test 2' }]
       ]);
-      
+
       await summary.default.outputFirstRun(items);
-      
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n## :information_source: First Run Detected');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n\nImporting 2 issues from the project but will not generate output for this run.');
+
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n## :information_source: First Run Detected'
+      );
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n\nImporting 2 issues from the project but will not generate output for this run.'
+      );
     });
   });
 
   describe('outputDiff', () => {
     it('should show no changes message when no changes', async () => {
       const diff = { added: [], removed: [], changed: [], closed: [] };
-      
+
       const result = await summary.default.outputDiff(diff);
-      
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n## No Changes\n\nNo changes were detected in the project.');
+
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n## No Changes\n\nNo changes were detected in the project.'
+      );
       expect(result).toBe('test summary');
     });
 
@@ -51,18 +57,22 @@ describe('summary', () => {
         added: [],
         removed: [],
         closed: [],
-        changed: [{
-          title: 'Test Item',
-          url: 'https://github.com/test/repo/issues/1',
-          status: { prev: 'Todo', next: 'In Progress' },
-          assignees_added: ['alice']
-        }]
+        changed: [
+          {
+            title: 'Test Item',
+            url: 'https://github.com/test/repo/issues/1',
+            status: { prev: 'Todo', next: 'In Progress' },
+            assignees_added: ['alice']
+          }
+        ]
       };
-      
+
       await summary.default.outputDiff(diff);
-      
+
       expect(mockSummary.addRaw).toHaveBeenCalledWith('🚀 **Work Started**\n');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('- [Test Item](https://github.com/test/repo/issues/1) - 🚀 Work started • 👨‍💻 alice picked this up\n');
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '- [Test Item](https://github.com/test/repo/issues/1) - 🚀 Work started • 👨‍💻 alice picked this up\n'
+      );
     });
 
     it('should group completed items correctly', async () => {
@@ -70,16 +80,20 @@ describe('summary', () => {
         added: [],
         removed: [],
         changed: [],
-        closed: [{
-          title: 'Completed Item',
-          url: 'https://github.com/test/repo/issues/2'
-        }]
+        closed: [
+          {
+            title: 'Completed Item',
+            url: 'https://github.com/test/repo/issues/2'
+          }
+        ]
       };
-      
+
       await summary.default.outputDiff(diff);
-      
+
       expect(mockSummary.addRaw).toHaveBeenCalledWith('✅ **Completed**\n');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('- [Completed Item](https://github.com/test/repo/issues/2)\n');
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '- [Completed Item](https://github.com/test/repo/issues/2)\n'
+      );
     });
 
     it('should show cadence insights with time context', async () => {
@@ -92,49 +106,63 @@ describe('summary', () => {
         ],
         closed: []
       };
-      
+
       const metadata = {
         lastUpdate: '2025-07-29T10:00:00.000Z',
         previousUpdate: '2025-07-29T09:30:00.000Z'
       };
-      
+
       await summary.default.outputDiff(diff, metadata);
-      
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('📈 **3 items moved forward since last update (30 minutes ago)**\n\n');
+
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '📈 **3 items moved forward since last update (30 minutes ago)**\n\n'
+      );
     });
 
     it('should handle added items', async () => {
       const diff = {
-        added: [{
-          title: 'New Item',
-          url: 'https://github.com/test/repo/issues/3'
-        }],
+        added: [
+          {
+            title: 'New Item',
+            url: 'https://github.com/test/repo/issues/3'
+          }
+        ],
         removed: [],
         changed: [],
         closed: []
       };
-      
+
       await summary.default.outputDiff(diff);
-      
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('➕ **Added to Board**\n');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('- [New Item](https://github.com/test/repo/issues/3)\n');
+
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '➕ **Added to Board**\n'
+      );
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '- [New Item](https://github.com/test/repo/issues/3)\n'
+      );
     });
 
     it('should handle removed items', async () => {
       const diff = {
         added: [],
-        removed: [{
-          title: 'Removed Item',
-          url: 'https://github.com/test/repo/issues/4'
-        }],
+        removed: [
+          {
+            title: 'Removed Item',
+            url: 'https://github.com/test/repo/issues/4'
+          }
+        ],
         changed: [],
         closed: []
       };
-      
+
       await summary.default.outputDiff(diff);
-      
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('❌ **Removed from Board**\n');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('- [Removed Item](https://github.com/test/repo/issues/4)\n');
+
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '❌ **Removed from Board**\n'
+      );
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '- [Removed Item](https://github.com/test/repo/issues/4)\n'
+      );
     });
 
     it('should handle other updates (non-status changes)', async () => {
@@ -142,18 +170,22 @@ describe('summary', () => {
         added: [],
         removed: [],
         closed: [],
-        changed: [{
-          title: 'Updated Item',
-          url: 'https://github.com/test/repo/issues/5',
-          labels_added: ['urgent'],
-          assignees_added: ['bob']
-        }]
+        changed: [
+          {
+            title: 'Updated Item',
+            url: 'https://github.com/test/repo/issues/5',
+            labels_added: ['urgent'],
+            assignees_added: ['bob']
+          }
+        ]
       };
-      
+
       await summary.default.outputDiff(diff);
-      
+
       expect(mockSummary.addRaw).toHaveBeenCalledWith('🔄 **Other Updates**\n');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('- [Updated Item](https://github.com/test/repo/issues/5) - 🏷️ Tagged: urgent • 👨‍💻 bob picked this up\n');
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '- [Updated Item](https://github.com/test/repo/issues/5) - 🏷️ Tagged: urgent • 👨‍💻 bob picked this up\n'
+      );
     });
   });
 
@@ -166,25 +198,34 @@ describe('summary', () => {
         lastUpdate: '2025-07-29T10:00:00.000Z',
         previousUpdate: '2025-07-29T09:45:00.000Z' // 15 minutes ago
       };
-      
+
       await summary.default.outputDiff(diff, metadata);
-      
+
       const calls = (mockSummary.addRaw as jest.Mock).mock.calls;
-      const cadenceCall = calls.find(call => call[0].includes('since last update'));
+      const cadenceCall = calls.find((call) =>
+        call[0].includes('since last update')
+      );
       expect(cadenceCall[0]).toContain('15 minutes ago');
     });
 
     it('should format hours correctly', async () => {
-      const diff = { added: [{}, {}, {}], removed: [], changed: [], closed: [] };
+      const diff = {
+        added: [{}, {}, {}],
+        removed: [],
+        changed: [],
+        closed: []
+      };
       const metadata = {
         lastUpdate: '2025-07-29T10:00:00.000Z',
         previousUpdate: '2025-07-29T07:30:00.000Z' // 2.5 hours ago
       };
-      
+
       await summary.default.outputDiff(diff, metadata);
-      
+
       const calls = (mockSummary.addRaw as jest.Mock).mock.calls;
-      const cadenceCall = calls.find(call => call[0].includes('since last update'));
+      const cadenceCall = calls.find((call) =>
+        call[0].includes('since last update')
+      );
       expect(cadenceCall[0]).toContain('2.5 hours ago');
     });
   });

@@ -20,11 +20,14 @@ describe('outputs', () => {
           { title: 'New Item 2', url: 'https://github.com/test/repo/issues/2' }
         ],
         removed: [
-          { title: 'Removed Item', url: 'https://github.com/test/repo/issues/3' }
+          {
+            title: 'Removed Item',
+            url: 'https://github.com/test/repo/issues/3'
+          }
         ],
         changed: [
-          { 
-            title: 'Changed Item', 
+          {
+            title: 'Changed Item',
             url: 'https://github.com/test/repo/issues/4',
             status: { prev: 'Todo', next: 'In Progress' }
           }
@@ -33,9 +36,18 @@ describe('outputs', () => {
 
       outputs.default.diff(diff);
 
-      expect(core.setOutput).toHaveBeenCalledWith('added', JSON.stringify(diff.added));
-      expect(core.setOutput).toHaveBeenCalledWith('removed', JSON.stringify(diff.removed));
-      expect(core.setOutput).toHaveBeenCalledWith('changed', JSON.stringify(diff.changed));
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'added',
+        JSON.stringify(diff.added)
+      );
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'removed',
+        JSON.stringify(diff.removed)
+      );
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'changed',
+        JSON.stringify(diff.changed)
+      );
       expect(core.setOutput).toHaveBeenCalledTimes(3);
     });
 
@@ -57,22 +69,24 @@ describe('outputs', () => {
       const diff = {
         added: [],
         removed: [],
-        changed: [{
-          title: 'Complex Item',
-          url: 'https://github.com/test/repo/issues/5',
-          status: { prev: 'Todo', next: 'Done' },
-          labels_added: ['urgent', 'bug'],
-          assignees_added: ['alice', 'bob'],
-          previous_title: 'Old Title'
-        }]
+        changed: [
+          {
+            title: 'Complex Item',
+            url: 'https://github.com/test/repo/issues/5',
+            status: { prev: 'Todo', next: 'Done' },
+            labels_added: ['urgent', 'bug'],
+            assignees_added: ['alice', 'bob'],
+            previous_title: 'Old Title'
+          }
+        ]
       };
 
       outputs.default.diff(diff);
 
       const changedCall = (core.setOutput as jest.Mock).mock.calls.find(
-        call => call[0] === 'changed'
+        (call) => call[0] === 'changed'
       );
-      
+
       const parsedChanged = JSON.parse(changedCall[1]);
       expect(parsedChanged[0]).toEqual(diff.changed[0]);
     });

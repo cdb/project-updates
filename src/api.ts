@@ -24,7 +24,7 @@ const filterString = core.getInput('filter');
 const branchName = core.getInput('branch') || '';
 
 // Version for metadata schema - could be injected during build based on git SHA
-const METADATA_VERSION = process.env.BUILD_VERSION || "2.0";
+const METADATA_VERSION = process.env.BUILD_VERSION || '2.0';
 
 interface DataWithMetadata {
   _metadata: {
@@ -47,7 +47,7 @@ function migrateToNewFormat(data: any): DataWithMetadata {
   if (data._metadata && data.items) {
     return data as DataWithMetadata;
   }
-  
+
   // It's old format - migrate it
   debug('Migrating old format data to new format');
   return {
@@ -77,9 +77,12 @@ async function getOldItems(): Promise<OldItems> {
       contentOptions.ref = branchName;
     }
 
-    let { data }: { data: any } = await storageOctokit.rest.repos.getContent(contentOptions);
+    let { data }: { data: any } =
+      await storageOctokit.rest.repos.getContent(contentOptions);
     if (data.content != 'undefined') {
-      const rawData = JSON.parse(Buffer.from(data.content, 'base64').toString());
+      const rawData = JSON.parse(
+        Buffer.from(data.content, 'base64').toString()
+      );
       const migratedData = migrateToNewFormat(rawData);
       items = migratedData.items;
       metadata = migratedData._metadata;
@@ -185,11 +188,15 @@ async function getNewItems(): Promise<NewItemsMap> {
   }
 }
 
-async function saveItems(items, sha, previousMetadata?: DataWithMetadata['_metadata']) {
+async function saveItems(
+  items,
+  sha,
+  previousMetadata?: DataWithMetadata['_metadata']
+) {
   try {
     const now = new Date();
     const runId = now.toISOString().replace(/[:.]/g, '').slice(0, 15); // 20250729T153000
-    
+
     const newData: DataWithMetadata = {
       _metadata: {
         version: METADATA_VERSION,
@@ -212,7 +219,7 @@ async function saveItems(items, sha, previousMetadata?: DataWithMetadata['_metad
         email: committerEmail
       }
     };
-    
+
     // Only add the branch property if a branch name is specified
     if (branchName && branchName.trim() !== '') {
       debug(`Using branch: "${branchName}" for commit`);
@@ -222,7 +229,7 @@ async function saveItems(items, sha, previousMetadata?: DataWithMetadata['_metad
     }
 
     debug('Saving with metadata:', newData._metadata);
-    
+
     await storageOctokit.rest.repos.createOrUpdateFileContents(commitOptions);
   } catch (err) {
     core.error(err);

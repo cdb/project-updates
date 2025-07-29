@@ -1,7 +1,12 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import * as core from '@actions/core';
 import { Octokit } from '@octokit/rest';
-import { sampleOldItems, sampleNewItems, oldFormatData, newFormatData } from './test-data.js';
+import {
+  sampleOldItems,
+  sampleNewItems,
+  oldFormatData,
+  newFormatData
+} from './test-data.js';
 
 // Mock all external dependencies
 const mockOctokit = {
@@ -95,21 +100,21 @@ jest.mock('node-fetch', () => ({
 describe('Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default mock implementations
     (core.getInput as jest.Mock).mockImplementation((name: string) => {
       const inputs = {
-        'storage_token': 'test-storage-token',
-        'storage_repository': 'test/repo',
-        'storage_path': 'data/updates.json',
-        'committer_name': 'Test Bot',
-        'committer_email': 'bot@test.com',
-        'project_organization': 'test-org',
-        'project_number': '123',
-        'project_token': 'test-project-token',
-        'custom_fields': '',
-        'filter': '',
-        'branch': ''
+        storage_token: 'test-storage-token',
+        storage_repository: 'test/repo',
+        storage_path: 'data/updates.json',
+        committer_name: 'Test Bot',
+        committer_email: 'bot@test.com',
+        project_organization: 'test-org',
+        project_number: '123',
+        project_token: 'test-project-token',
+        custom_fields: '',
+        filter: '',
+        branch: ''
       };
       return inputs[name] || '';
     });
@@ -129,14 +134,24 @@ describe('Integration Tests', () => {
       await run();
 
       // Verify first run behavior
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n## :information_source: First Run Detected');
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n\nImporting 3 issues from the project but will not generate output for this run.');
-      
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n## :information_source: First Run Detected'
+      );
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n\nImporting 3 issues from the project but will not generate output for this run.'
+      );
+
       // Verify save was called with new format
-      expect(mockOctokit.rest.repos.createOrUpdateFileContents).toHaveBeenCalled();
-      const saveCall = (mockOctokit.rest.repos.createOrUpdateFileContents as jest.Mock).mock.calls[0][0];
-      const savedContent = JSON.parse(Buffer.from(saveCall.content, 'base64').toString());
-      
+      expect(
+        mockOctokit.rest.repos.createOrUpdateFileContents
+      ).toHaveBeenCalled();
+      const saveCall = (
+        mockOctokit.rest.repos.createOrUpdateFileContents as jest.Mock
+      ).mock.calls[0][0];
+      const savedContent = JSON.parse(
+        Buffer.from(saveCall.content, 'base64').toString()
+      );
+
       expect(savedContent._metadata).toBeDefined();
       expect(savedContent._metadata.version).toBe('2.0');
       expect(savedContent.items).toBeDefined();
@@ -146,7 +161,9 @@ describe('Integration Tests', () => {
       // Mock existing old format data
       mockOctokit.rest.repos.getContent.mockResolvedValue({
         data: {
-          content: Buffer.from(JSON.stringify(sampleOldItems)).toString('base64'),
+          content: Buffer.from(JSON.stringify(sampleOldItems)).toString(
+            'base64'
+          ),
           sha: 'test-sha'
         }
       });
@@ -156,14 +173,23 @@ describe('Integration Tests', () => {
 
       // Verify outputs were set
       expect(core.setOutput).toHaveBeenCalledWith('added', expect.any(String));
-      expect(core.setOutput).toHaveBeenCalledWith('removed', expect.any(String));
-      expect(core.setOutput).toHaveBeenCalledWith('changed', expect.any(String));
-      expect(core.setOutput).toHaveBeenCalledWith('updates', 'integration test summary');
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'removed',
+        expect.any(String)
+      );
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'changed',
+        expect.any(String)
+      );
+      expect(core.setOutput).toHaveBeenCalledWith(
+        'updates',
+        'integration test summary'
+      );
 
       // Verify summary was generated with sections
       const summaryAddRawCalls = (mockSummary.addRaw as jest.Mock).mock.calls;
-      const summaryContent = summaryAddRawCalls.map(call => call[0]).join('');
-      
+      const summaryContent = summaryAddRawCalls.map((call) => call[0]).join('');
+
       expect(summaryContent).toContain('🚀 **Work Started**');
       expect(summaryContent).toContain('✅ **Completed**');
       expect(summaryContent).toContain('➕ **Added to Board**');
@@ -173,7 +199,9 @@ describe('Integration Tests', () => {
       // Mock old format data
       mockOctokit.rest.repos.getContent.mockResolvedValue({
         data: {
-          content: Buffer.from(JSON.stringify(oldFormatData)).toString('base64'),
+          content: Buffer.from(JSON.stringify(oldFormatData)).toString(
+            'base64'
+          ),
           sha: 'old-sha'
         }
       });
@@ -182,9 +210,13 @@ describe('Integration Tests', () => {
       await run();
 
       // Verify data was migrated and saved in new format
-      const saveCall = (mockOctokit.rest.repos.createOrUpdateFileContents as jest.Mock).mock.calls[0][0];
-      const savedContent = JSON.parse(Buffer.from(saveCall.content, 'base64').toString());
-      
+      const saveCall = (
+        mockOctokit.rest.repos.createOrUpdateFileContents as jest.Mock
+      ).mock.calls[0][0];
+      const savedContent = JSON.parse(
+        Buffer.from(saveCall.content, 'base64').toString()
+      );
+
       expect(savedContent._metadata).toBeDefined();
       expect(savedContent._metadata.version).toBe('2.0');
       expect(savedContent._metadata.lastUpdate).toBeDefined();
@@ -215,7 +247,9 @@ describe('Integration Tests', () => {
       await run();
 
       // Verify time context was used in summary
-      const summaryContent = (mockSummary.addRaw as jest.Mock).mock.calls.map(call => call[0]).join('');
+      const summaryContent = (mockSummary.addRaw as jest.Mock).mock.calls
+        .map((call) => call[0])
+        .join('');
       expect(summaryContent).toContain('since last update');
       expect(summaryContent).toContain('ago');
     });
@@ -236,7 +270,7 @@ describe('Integration Tests', () => {
     it('should handle no changes scenario', async () => {
       // Mock existing data that matches current project state
       const currentProjectData = {
-        'ITEM_1': {
+        ITEM_1: {
           type: 'ISSUE',
           title: 'Fix critical bug in login',
           status: 'In Progress',
@@ -245,7 +279,7 @@ describe('Integration Tests', () => {
           closed: false,
           assignees: ['bob']
         },
-        'ITEM_2': {
+        ITEM_2: {
           type: 'ISSUE',
           title: 'Add new feature',
           status: 'Done',
@@ -254,7 +288,7 @@ describe('Integration Tests', () => {
           closed: true,
           assignees: ['alice']
         },
-        'ITEM_3': {
+        ITEM_3: {
           type: 'ISSUE',
           title: 'New issue',
           status: 'Todo',
@@ -267,7 +301,9 @@ describe('Integration Tests', () => {
 
       mockOctokit.rest.repos.getContent.mockResolvedValue({
         data: {
-          content: Buffer.from(JSON.stringify(currentProjectData)).toString('base64'),
+          content: Buffer.from(JSON.stringify(currentProjectData)).toString(
+            'base64'
+          ),
           sha: 'no-changes-sha'
         }
       });
@@ -276,7 +312,9 @@ describe('Integration Tests', () => {
       await run();
 
       // Verify no changes message
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n## No Changes\n\nNo changes were detected in the project.');
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n## No Changes\n\nNo changes were detected in the project.'
+      );
     });
   });
 
@@ -302,7 +340,9 @@ describe('Integration Tests', () => {
       const { run } = await import('../src/index.js');
       await run();
 
-      expect(mockSummary.addRaw).toHaveBeenCalledWith('\n## No Changes\n\nNo changes were detected in the project.');
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n## No Changes\n\nNo changes were detected in the project.'
+      );
     });
 
     it('should handle large number of changes', async () => {
@@ -359,7 +399,9 @@ describe('Integration Tests', () => {
       await run();
 
       // Should show cadence insight for large number of changes
-      const summaryContent = (mockSummary.addRaw as jest.Mock).mock.calls.map(call => call[0]).join('');
+      const summaryContent = (mockSummary.addRaw as jest.Mock).mock.calls
+        .map((call) => call[0])
+        .join('');
       expect(summaryContent).toContain('50 items moved forward');
     });
   });
