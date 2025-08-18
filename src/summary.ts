@@ -151,10 +151,6 @@ async function outputDiff({ added, removed, changed, closed }, metadata?: any) {
     added.length + removed.length + changed.length + closed.length > 0;
 
   if (!hasChanges) {
-    summary.addRaw(
-      '\n## No Changes\n\nNo changes were detected in the project.'
-    );
-    await writeSummary();
     return cleanMessage(summary.stringify());
   }
 
