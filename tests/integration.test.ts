@@ -311,10 +311,8 @@ describe('Integration Tests', () => {
       const { run } = await import('../src/index.js');
       await run();
 
-      // Verify no changes message
-      expect(mockSummary.addRaw).toHaveBeenCalledWith(
-        '\n## No Changes\n\nNo changes were detected in the project.'
-      );
+      // Verify no output for no changes
+      expect(mockSummary.addRaw).not.toHaveBeenCalled();
     });
   });
 
@@ -340,9 +338,7 @@ describe('Integration Tests', () => {
       const { run } = await import('../src/index.js');
       await run();
 
-      expect(mockSummary.addRaw).toHaveBeenCalledWith(
-        '\n## No Changes\n\nNo changes were detected in the project.'
-      );
+      expect(mockSummary.addRaw).not.toHaveBeenCalled();
     });
 
     it('should handle large number of changes', async () => {

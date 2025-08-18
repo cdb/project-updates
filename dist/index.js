@@ -59569,8 +59569,6 @@ function addCadenceInsights(added, changed, closed, metadata) {
 async function outputDiff({ added, removed, changed, closed }, metadata) {
     const hasChanges = added.length + removed.length + changed.length + closed.length > 0;
     if (!hasChanges) {
-        core.summary.addRaw('\n## No Changes\n\nNo changes were detected in the project.');
-        await writeSummary();
         return cleanMessage(core.summary.stringify());
     }
     // Add cadence insights at the top

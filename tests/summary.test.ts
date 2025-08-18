@@ -41,14 +41,12 @@ describe('summary', () => {
   });
 
   describe('outputDiff', () => {
-    it('should show no changes message when no changes', async () => {
+    it('should produce no output when no changes', async () => {
       const diff = { added: [], removed: [], changed: [], closed: [] };
 
       const result = await summary.default.outputDiff(diff);
 
-      expect(mockSummary.addRaw).toHaveBeenCalledWith(
-        '\n## No Changes\n\nNo changes were detected in the project.'
-      );
+      expect(mockSummary.addRaw).not.toHaveBeenCalled();
       expect(result).toBe('test summary');
     });
 
