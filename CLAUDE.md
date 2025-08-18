@@ -49,3 +49,19 @@ The action is configured via `action.yml` inputs:
 - GitHub Actions SDK (`@actions/core`, `@actions/github`)
 - GitHub API client (`@octokit/rest`, `github-project`)
 - Utilities (`lodash`, `node-fetch`)
+
+## Git Workflow
+
+**IMPORTANT**: Always follow this git workflow when making changes:
+
+1. **Never work directly on main** - Always create a new feature branch
+2. **Create descriptive branch names** - Use format like `feature/description` or `fix/description`
+3. **Commit at significant milestones** - Make commits when you've completed meaningful work, not for every small change
+4. **Always create a PR** - After completing work, push the branch and create a pull request
+5. **Include proper commit messages** - Follow the existing style with clear descriptions of what was changed and why
+
+### Commit Guidelines
+- Commit when you've completed a logical unit of work
+- Include the Claude Code footer in commit messages
+- Build the distribution (`npm run build`) before committing if source files changed
+- Update tests when modifying functionality
