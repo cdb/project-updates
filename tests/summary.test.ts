@@ -24,10 +24,28 @@ describe('summary', () => {
 
   describe('outputFirstRun', () => {
     it('should generate first run message', async () => {
-      const items = new Map([
-        ['item1', { title: 'Test 1' }],
-        ['item2', { title: 'Test 2' }]
-      ]);
+      const items = {
+        'item1': { 
+          type: 'ISSUE',
+          title: 'Test 1',
+          status: 'Todo',
+          labels: '',
+          url: 'https://github.com/test/repo/issues/1',
+          closed: '',
+          merged: '',
+          assignees: ''
+        },
+        'item2': { 
+          type: 'ISSUE',
+          title: 'Test 2',
+          status: 'Todo',
+          labels: '',
+          url: 'https://github.com/test/repo/issues/2',
+          closed: '',
+          merged: '',
+          assignees: ''
+        }
+      };
 
       await summary.default.outputFirstRun(items);
 
@@ -36,6 +54,19 @@ describe('summary', () => {
       );
       expect(mockSummary.addRaw).toHaveBeenCalledWith(
         '\n\nImporting 2 issues from the project but will not generate output for this run.'
+      );
+    });
+
+    it('should handle empty items correctly', async () => {
+      const items = {};
+
+      await summary.default.outputFirstRun(items);
+
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n## :information_source: First Run Detected'
+      );
+      expect(mockSummary.addRaw).toHaveBeenCalledWith(
+        '\n\nImporting 0 issues from the project but will not generate output for this run.'
       );
     });
   });

@@ -96,7 +96,7 @@ function buildContextualMessage(item) {
 async function outputFirstRun(added: NewItemsMap) {
   summary.addRaw('\n## :information_source: First Run Detected');
   summary.addRaw(
-    `\n\nImporting ${added.size} issues from the project but will not generate output for this run.`
+    `\n\nImporting ${Object.keys(added).length} issues from the project but will not generate output for this run.`
   );
   await writeSummary();
 }

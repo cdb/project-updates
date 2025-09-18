@@ -1,0 +1,4 @@
+# Claude configuration file
+# This file points to CLAUDE.md for detailed guidance on working with this repository
+
+guidance_file: ./CLAUDE.md
