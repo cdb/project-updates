@@ -1,6 +1,6 @@
 import { summary, setFailed } from '@actions/core';
 import { debug } from './helpers.js';
-import { NewItemsMap } from './api.js';
+import { NewItemsRecord } from './api.js';
 
 const linkFinderRegex = /\[(.*?)\]\((.*?)\)/gim;
 const headingFinderRegex = /^## (.*)$/gim;
@@ -93,7 +93,7 @@ function buildContextualMessage(item) {
   return messages.join(' • ');
 }
 
-async function outputFirstRun(added: NewItemsMap) {
+async function outputFirstRun(added: NewItemsRecord) {
   summary.addRaw('\n## :information_source: First Run Detected');
   summary.addRaw(
     `\n\nImporting ${Object.keys(added).length} issues from the project but will not generate output for this run.`

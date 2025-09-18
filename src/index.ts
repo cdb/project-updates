@@ -1,5 +1,5 @@
 import { setFailed, setOutput } from '@actions/core';
-import api, { NewItemsMap } from './api.js';
+import api, { NewItemsRecord } from './api.js';
 import outputs from './outputs.js';
 import { debug } from './helpers.js';
 import comparator from './comparator.js';
