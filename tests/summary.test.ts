@@ -25,7 +25,7 @@ describe('summary', () => {
   describe('outputFirstRun', () => {
     it('should generate first run message', async () => {
       const items = {
-        'item1': { 
+        item1: {
           type: 'ISSUE',
           title: 'Test 1',
           status: 'Todo',
@@ -35,7 +35,7 @@ describe('summary', () => {
           merged: '',
           assignees: ''
         },
-        'item2': { 
+        item2: {
           type: 'ISSUE',
           title: 'Test 2',
           status: 'Todo',
