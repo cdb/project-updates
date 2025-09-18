@@ -97,7 +97,7 @@ async function getOldItems(): Promise<OldItems> {
   return { items, sha, metadata };
 }
 
-export interface NewItemsMap {
+export interface NewItemsRecord {
   [key: string]: NewItem;
 }
 
@@ -112,7 +112,7 @@ export interface NewItem {
   assignees: string;
 }
 
-async function getNewItems(): Promise<NewItemsMap> {
+async function getNewItems(): Promise<NewItemsRecord> {
   try {
     let fields = { status: 'status' };
     if (customFields) {
@@ -149,7 +149,7 @@ async function getNewItems(): Promise<NewItemsMap> {
     }
 
     const items: any[] = await project.items.list();
-    let data: NewItemsMap = {};
+    let data: NewItemsRecord = {};
     itemLoop: for (const item of items) {
       // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
       if (item.content?.id === undefined) {
