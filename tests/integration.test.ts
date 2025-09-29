@@ -254,7 +254,7 @@ describe('Integration Tests', () => {
       expect(summaryContent).toContain('ago');
     });
 
-    it('should handle errors gracefully', async () => {
+    it('should fail workflow when old items cannot be loaded', async () => {
       // Mock API error
       const apiError = new Error('API Error');
       (apiError as any).status = 500;
@@ -263,8 +263,48 @@ describe('Integration Tests', () => {
       const { run } = await import('../src/index.js');
       await run();
 
-      // Verify error handling
+      // Verify error handling - should fail the workflow
       expect(core.error).toHaveBeenCalledWith(apiError);
+      expect(core.setFailed).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load old items')
+      );
+    });
+
+    it('should fail workflow when fetching new items fails without saving', async () => {
+      // Mock successful load of old items
+      mockOctokit.rest.repos.getContent.mockResolvedValue({
+        data: {
+          content: Buffer.from(JSON.stringify(newFormatData)).toString(
+            'base64'
+          ),
+          sha: 'abc123'
+        }
+      });
+
+      // Mock failure when fetching new items from project
+      const mockGitHubProject = await import('github-project');
+      const fetchError = new Error('We couldn\'t respond to your request in time');
+      (fetchError as any).status = 504;
+      
+      const mockProject = {
+        items: {
+          list: jest.fn().mockRejectedValue(fetchError)
+        }
+      };
+      (mockGitHubProject.default as jest.Mock).mockReturnValue(mockProject);
+
+      const { run } = await import('../src/index.js');
+      await run();
+
+      // Verify workflow failed
+      expect(core.setFailed).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to fetch new items from project')
+      );
+
+      // Verify saveItems was NOT called (should not save empty data)
+      expect(
+        mockOctokit.rest.repos.createOrUpdateFileContents
+      ).not.toHaveBeenCalled();
     });
 
     it('should handle no changes scenario', async () => {
