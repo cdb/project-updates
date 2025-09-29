@@ -283,9 +283,11 @@ describe('Integration Tests', () => {
 
       // Mock failure when fetching new items from project
       const mockGitHubProject = await import('github-project');
-      const fetchError = new Error('We couldn\'t respond to your request in time');
+      const fetchError = new Error(
+        "We couldn't respond to your request in time"
+      );
       (fetchError as any).status = 504;
-      
+
       const mockProject = {
         items: {
           list: jest.fn().mockRejectedValue(fetchError)

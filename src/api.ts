@@ -156,9 +156,7 @@ async function getNewItems(): Promise<NewItemsRecord> {
     } else {
       for (const filter of filters) {
         const { key, value, include } = filter;
-        if (
-          include ? item.fields[key] !== value : item.fields[key] === value
-        ) {
+        if (include ? item.fields[key] !== value : item.fields[key] === value) {
           // TODO: Smarter filters, this is only fields
           debug(
             `skipping item due to filter (${key}|${value}|${include}): `,

@@ -29,7 +29,9 @@ export async function run(): Promise<void> {
     } catch (error) {
       // If we fail to fetch new items, we should not save anything
       // to avoid treating the failure as "everything was removed"
-      throw new Error(`Failed to fetch new items from project: ${error.message}`);
+      throw new Error(
+        `Failed to fetch new items from project: ${error.message}`
+      );
     }
 
     await api.saveItems(newItems, sha, metadata);
