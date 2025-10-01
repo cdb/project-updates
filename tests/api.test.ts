@@ -291,7 +291,7 @@ describe('api', () => {
       expect(result).toEqual({});
     });
 
-    it('should handle errors gracefully', async () => {
+    it('should throw errors instead of returning empty object', async () => {
       const mockProject = {
         items: {
           list: jest.fn().mockRejectedValue(new Error('API Error'))
@@ -300,10 +300,7 @@ describe('api', () => {
 
       (mockGitHubProject.default as jest.Mock).mockReturnValue(mockProject);
 
-      const result = await api.default.getNewItems();
-
-      expect(result).toEqual({});
-      expect(core.error).toHaveBeenCalled();
+      await expect(api.default.getNewItems()).rejects.toThrow('API Error');
     });
   });
 });

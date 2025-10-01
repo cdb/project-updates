@@ -59260,72 +59260,66 @@ async function getOldItems() {
     return { items, sha, metadata };
 }
 async function getNewItems() {
-    try {
-        let fields = { status: 'status' };
-        if (customFields) {
-            fields = customFields.split(',').reduce((acc, field) => {
-                acc[field] = field;
-                return acc;
-            }, fields);
-        }
-        const project = new api_GitHubProject({
-            owner: projectOrganization,
-            number: projectNumber,
-            // @ts-ignore
-            octokit: new rest_dist_src_Octokit({
-                auth: core.getInput('project_token'),
-                fetch: api_fetch
-            }),
-            fields: fields
+    let fields = { status: 'status' };
+    if (customFields) {
+        fields = customFields.split(',').reduce((acc, field) => {
+            acc[field] = field;
+            return acc;
+        }, fields);
+    }
+    const project = new api_GitHubProject({
+        owner: projectOrganization,
+        number: projectNumber,
+        // @ts-ignore
+        octokit: new rest_dist_src_Octokit({
+            auth: core.getInput('project_token'),
+            fetch: api_fetch
+        }),
+        fields: fields
+    });
+    const quotesRegex = /"([^"]*)"/g;
+    let filters = [];
+    if (filterString !== '') {
+        filters = filterString.split(',').map(function (f) {
+            let [key, value] = f.split(':');
+            value = value.replace(quotesRegex, '$1');
+            let include = true;
+            if (key.startsWith('-')) {
+                include = false;
+                key = key.substring(1);
+            }
+            return { key, value, include };
         });
-        const quotesRegex = /"([^"]*)"/g;
-        let filters = [];
-        if (filterString !== '') {
-            filters = filterString.split(',').map(function (f) {
-                let [key, value] = f.split(':');
-                value = value.replace(quotesRegex, '$1');
-                let include = true;
-                if (key.startsWith('-')) {
-                    include = false;
-                    key = key.substring(1);
-                }
-                return { key, value, include };
-            });
-        }
-        const items = await project.items.list();
-        let data = {};
-        itemLoop: for (const item of items) {
-            // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
-            if (item.content?.id === undefined) {
-                continue;
-            }
-            else {
-                for (const filter of filters) {
-                    const { key, value, include } = filter;
-                    if (include ? item.fields[key] !== value : item.fields[key] === value) {
-                        // TODO: Smarter filters, this is only fields
-                        debug(`skipping item due to filter (${key}|${value}|${include}): `, item);
-                        continue itemLoop;
-                    }
-                }
-                data[item.content.id] = {
-                    type: item.type,
-                    title: item.fields.title,
-                    status: item.fields.status,
-                    labels: item.content.labels,
-                    url: item.content.url,
-                    closed: item.content.closed,
-                    merged: item.content.merged,
-                    assignees: item.content.assignees
-                };
-            }
-        }
-        return data;
     }
-    catch (err) {
-        core.error(err);
-        return {};
+    const items = await project.items.list();
+    let data = {};
+    itemLoop: for (const item of items) {
+        // TODO: We don't get a url for type:DRAFT_ISSUE, should this be all ID? Does that change?
+        if (item.content?.id === undefined) {
+            continue;
+        }
+        else {
+            for (const filter of filters) {
+                const { key, value, include } = filter;
+                if (include ? item.fields[key] !== value : item.fields[key] === value) {
+                    // TODO: Smarter filters, this is only fields
+                    debug(`skipping item due to filter (${key}|${value}|${include}): `, item);
+                    continue itemLoop;
+                }
+            }
+            data[item.content.id] = {
+                type: item.type,
+                title: item.fields.title,
+                status: item.fields.status,
+                labels: item.content.labels,
+                url: item.content.url,
+                closed: item.content.closed,
+                merged: item.content.merged,
+                assignees: item.content.assignees
+            };
+        }
     }
+    return data;
 }
 async function saveItems(items, sha, previousMetadata) {
     try {
@@ -59658,12 +59652,24 @@ async function run() {
                 debug('first run');
                 isFirstRun = true;
             }
+            else {
+                // If there's an error loading old items (other than 404), we should fail
+                throw new Error(`Failed to load old items: ${error.message}`);
+            }
         }
         else {
             debug('oldItems', oldItems);
         }
-        let newItems = await api.getNewItems();
-        debug('newItems:', newItems);
+        let newItems;
+        try {
+            newItems = await api.getNewItems();
+            debug('newItems:', newItems);
+        }
+        catch (error) {
+            // If we fail to fetch new items, we should not save anything
+            // to avoid treating the failure as "everything was removed"
+            throw new Error(`Failed to fetch new items from project: ${error.message}`);
+        }
         await api.saveItems(newItems, sha, metadata);
         let diff = comparator.diff(oldItems, newItems);
         // Send a simple summary and return
