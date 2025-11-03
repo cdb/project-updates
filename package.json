@@ -19,7 +19,7 @@
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/github": "^6.0.0",
-    "@octokit/rest": "^22.0.0",
+    "@octokit/rest": "^22.0.1",
     "github-project": "^5.4.2",
     "lodash": "^4.17.21",
     "node-fetch": "^3.3.2"
